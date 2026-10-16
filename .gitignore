@@ -1,0 +1,7 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+# Downloaded by tools/fetch_deps.sh
+addons/
+# Export output (rebuilt by CI)
+/build/
