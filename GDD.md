@@ -51,7 +51,7 @@ Total : 152 points, plus 10 de der, soit 162.
 - **Couper** : si on n'a pas la couleur demandée, il faut couper.
   - Exception : on joue ce qu'on veut si le partenaire est maître du pli. *(variante : obligation de couper même si le partenaire est maître)*
 - **Surcouper** : si le pli est déjà coupé, il faut surcouper si on le peut.
-  - Sinon on peut sous-couper (si on n'a que de l'atout) ou se défausser. *(variante : sous-coupe interdite tant qu'on a une autre carte)*
+  - Si on ne peut pas surcouper et que le partenaire n'est pas maître, il faut **sous-couper** (« pisser ») si on a de l'atout. On ne se défausse que si on n'a plus d'atout. *(variante : sous-coupe libre)*
 - Le gagnant du pli entame le suivant.
 
 ### 3.5 Belote-rebelote
@@ -79,7 +79,8 @@ Total : 152 points, plus 10 de der, soit 162.
 
 - Seule l'équipe qui détient la meilleure annonce marque, et elle marque alors toutes ses annonces.
   - On compare d'abord les points, puis la hauteur de la carte la plus haute.
-  - À égalité, une suite à l'atout l'emporte ; sinon, le premier joueur à parler l'emporte. *(à confirmer)*
+  - À égalité, une suite à l'atout l'emporte.
+  - Deux suites égales hors atout : le premier joueur à parler l'emporte. *(à confirmer)*
 - *(variante : annonces désactivées)*
 
 ### 3.7 Décompte d'une donne
@@ -92,7 +93,7 @@ Total : 152 points, plus 10 de der, soit 162.
   - Un 5 arrondit en dessous et un 6 au-dessus : 15 → 1, 16 → 2, 17 → 2.
   - Une donne vaut donc 16 points, ou 17 quand les deux équipes finissent en 6 (96 et 66 donnent 10 + 7).
   - Le capot vaut 25, un dedans 16 plus les annonces, une tierce 2 et la belote 2.
-  - La réussite du contrat se juge sur les points bruts, avant arrondi. *(à confirmer)*
+  - La réussite du contrat se juge sur les points bruts, avant arrondi.
   - *(variante : points bruts sans arrondi)*
 - La partie se joue en **101 points** *(variante : 501 ou 1000 en points bruts)*.
 
