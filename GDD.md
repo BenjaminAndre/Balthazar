@@ -25,13 +25,13 @@ Les règles se règlent : chaque table choisit ses variantes.
 
 ### 3.1 Joueurs, cartes, sens
 - 4 joueurs en 2 équipes, partenaires face à face. Jeu de 32 cartes.
-- Le jeu tourne dans le sens inverse des aiguilles d'une montre. Le joueur à droite du donneur parle et joue en premier.
+- Le jeu tourne dans le **sens des aiguilles d'une montre**. Le joueur à gauche du donneur parle et joue en premier.
 
 ### 3.2 Donne et prise
 - Le donneur distribue 3 puis 2 cartes à chacun (5 cartes) et retourne la carte suivante (la « retourne »).
-- **Premier tour** : chacun, à partir du joueur à droite du donneur, prend à la couleur de la retourne ou passe.
+- **Premier tour** : chacun, à partir du joueur à gauche du donneur, prend à la couleur de la retourne ou passe.
 - **Second tour** : si tout le monde a passé, chacun peut choisir une autre couleur d'atout ou passer.
-- Si personne ne prend, on redistribue. La donne passe au joueur suivant.
+- Si personne ne prend, on redistribue. La donne passe au joueur suivant, à gauche.
 - Le preneur reçoit la retourne et 2 cartes ; les autres reçoivent 3 cartes. Chacun a alors 8 cartes.
 
 ### 3.3 Valeur des cartes
@@ -87,8 +87,14 @@ Total : 152 points, plus 10 de der, soit 162.
   - S'il réussit, chaque équipe marque ses points.
   - S'il échoue (**dedans**), la défense marque 162 plus toutes les annonces ; la belote reste à ceux qui l'ont.
 - **Capot** : une équipe fait les 8 plis et marque 250 au lieu de 162.
-- **Litige** (égalité, par exemple 81 à 81) : la défense marque ses points. Ceux du preneur sont mis en réserve et vont à l'équipe qui gagne la donne suivante. *(variante : arrondis, pas de litige)*
-- La partie se joue en **1000 points** *(variante : 501, 2000)*.
+- **Litige** (égalité, par exemple 81 à 81) : la défense marque ses points. Ceux du preneur sont mis en réserve et vont à l'équipe qui gagne la donne suivante.
+- **Arrondi** : les points de chaque équipe sur la donne sont arrondis à la dizaine puis divisés par 10.
+  - Un 5 arrondit en dessous et un 6 au-dessus : 15 → 1, 16 → 2, 17 → 2.
+  - Une donne vaut donc 16 points, ou 17 quand les deux équipes finissent en 6 (96 et 66 donnent 10 + 7).
+  - Le capot vaut 25, un dedans 16 plus les annonces, une tierce 2 et la belote 2.
+  - La réussite du contrat se juge sur les points bruts, avant arrondi. *(à confirmer)*
+  - *(variante : points bruts sans arrondi)*
+- La partie se joue en **101 points** *(variante : 501 ou 1000 en points bruts)*.
 
 ## 4. Autres jeux (plus tard)
 - **Coinche** : enchères 80 à 160, puis capot ; coinche et surcoinche. Elle réutilise le jeu de la carte de la Belote ; seuls l'enchère et le décompte changent.
