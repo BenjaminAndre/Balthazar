@@ -114,7 +114,7 @@ Total : 152 points, plus 10 de der, soit 162.
 
 ## 7. Feuille de route (0.1.x)
 1. ✅ Squelette : projet, CI (APK + Windows), ce document.
-2. Moteur de Belote : donne, prise, jeu de la carte, belote, décompte. Tests.
+2. ✅ Moteur de Belote : donne, prise, jeu de la carte, belote, décompte. Tests.
 3. Annonces.
 4. Bots et parties simulées (1000 parties à graine, aucun coup illégal, les points tombent juste).
 5. Table en paysage sur téléphone, jouable hors ligne contre 3 bots. Premier test de l'APK.
