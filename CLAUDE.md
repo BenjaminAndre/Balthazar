@@ -30,6 +30,7 @@ godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png playin
 - `games/<game>/` holds one game's rules. It is **pure and deterministic**: one seed and the list of moves replay a whole game. No `Input`, clock, scene tree or global RNG. This is what later lets a referee check ranked games (GDD §6).
   - Rule variants are a `RuleSet`: flags for simple tweaks, swappable strategy objects (bidding, trick legality, announces, scoring) for deeper variants.
 - `bots/` pick moves from the legal moves. They fill empty seats, and headless bot games are the main test of the rules.
+- `table/`: `TableHost` runs a table: it owns the state, plays the bots, and sends each human seat packets `{event, view}` with only what that seat may see. The table screen (`ui/table.gd`) only plays those packets, so the same screen works solo, as host and as guest.
 - `network/`: Tube (WebRTC P2P, sessions shared by code). The host owns the state and sends each player only what that seat may see. **Tests must never open sockets or ports**: this machine has no firewall rights. Use an in-memory transport.
 - `ui/`: the landscape phone table. It only displays the state and turns taps into moves.
   - The look is procedural, with no image files: `felt.gdshader` (mat), `card.gdshader` (light and sheen on every card), `CardView` (faces, backs, shadows). The table rebuilds its nodes on each refresh and animates only what is new since the last one (dealt cards, the card just played, the trick swept to its winner).

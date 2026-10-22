@@ -10,6 +10,7 @@ enum Rank { SEPT, HUIT, NEUF, DIX, VALET, DAME, ROI, AS }
 
 const COUNT := 32
 const SUIT_LETTERS := ["P", "Co", "Ca", "T"]
+const SUIT_NAMES := ["pique", "cœur", "carreau", "trèfle"]
 const RANK_LETTERS := ["7", "8", "9", "10", "V", "D", "R", "A"]
 
 

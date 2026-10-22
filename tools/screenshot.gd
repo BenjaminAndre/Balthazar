@@ -1,7 +1,8 @@
 ﻿extends SceneTree
 ## Renders a screen for a moment and saves a screenshot, to check layouts without the editor:
 ##     godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png [setup] [width]
-## setup: home, bidding, playing (default), summary. width defaults to 1600 (a 20:9 phone at 720p).
+## setup: home, bidding, playing (default), last_trick, summary. width defaults to 1600
+## (a 20:9 phone at 720p).
 ##
 ## Godot only renders while a window can draw (not headless, not minimized), so the window is
 ## shrunk, made unfocusable and pushed off-screen, and the game renders into a SubViewport.
@@ -28,28 +29,35 @@ func _initialize() -> void:
         var table: Control = load("res://ui/table.tscn").instantiate()
         viewport.add_child(table)
         await process_frame  # nodes added in _initialize only get _ready() once the tree runs
-        table.bot.take_threshold = 0  # someone always takes, quickly
-        table.new_game(4)
+        await create_timer(0.8).timeout
+        var host: TableHost = table.host
+        host.auto_bots = false
+        host.start(4)
+        var state := host.state
+        host.bot.take_threshold = 0  # someone always takes, quickly
         match setup:
-            "playing":
-                _play_until(table, func() -> bool: return table.state.played.size() >= 6 \
-                        and table.state.to_act == 0)
             "bidding":
-                table.bot.take_threshold = 999
-                table.bot.take_threshold_second = 999
-                _play_until(table, func() -> bool: return table.state.to_act == 0)
-            "summary":
-                _play_until(table, func() -> bool: return table.state.deal_number > 0)
-                table._show_summary()
-        table._refresh()
+                host.bot.take_threshold = 999
+                host.bot.take_threshold_second = 999
+                _fast_forward(host, func() -> bool: return state.to_act == 0)
+                host.resend()
+            "playing":
+                _fast_forward(host, func() -> bool: return state.played.size() >= 6 and state.to_act == 0)
+                host.resend()
+            "last_trick", "summary":
+                # Everything but the hand's last card without the screen, then the last card through it.
+                _fast_forward(host, func() -> bool: return state.played.size() == 31)
+                host.resend()
+                await create_timer(0.8).timeout
+
+                host.submit(state.to_act, host.bot.choose(host.game.view_for(state, state.to_act)))
+                await create_timer(0.5 if setup == "last_trick" else 3.8).timeout
     await create_timer(1.2).timeout  # let the deal and play animations land
     viewport.get_texture().get_image().save_png(output)
     quit()
 
 
-## Plays every seat with the bot, without delays, until `done` holds.
-func _play_until(table: Control, done: Callable) -> void:
-    var state: BeloteState = table.state
+## Plays every seat with the bot straight on the state, without packets, until `done` holds.
+func _fast_forward(host: TableHost, done: Callable) -> void:
     while not done.call():
-        table._scored = {"taker": state.taker, "trump": state.trump}
-        table.game.apply(state, table.bot.choose(table.game.view_for(state, state.to_act)))
+        host.game.apply(host.state, host.bot.choose(host.game.view_for(host.state, host.state.to_act)))

@@ -78,7 +78,7 @@ Total : 152 points, plus 10 de der, soit 162.
   | 8 ou 7 | 0 (ne valent rien) |
 
 - Pour l'instant, les annonces sont **automatiques** : chacun déclare tout ce qu'il a en jouant sa première carte. *(plus tard : choisir de taire une annonce)*
-- Une même carte peut compter dans une suite et dans un carré. *(à confirmer)*
+- Une carte ne compte que dans une seule annonce : on prend d'abord les carrés, puis les suites avec les cartes restantes.
 - Seule l'équipe qui détient la meilleure annonce marque, et elle marque alors toutes ses annonces.
   - On compare d'abord les points. À points égaux, un carré bat une suite *(à confirmer)*, puis la suite la plus longue gagne, puis la carte la plus haute.
   - À égalité, une suite à l'atout l'emporte.

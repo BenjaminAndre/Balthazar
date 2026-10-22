@@ -18,6 +18,8 @@ static var _materials: Dictionary = {}
 var card := -1
 ## Greyed out: not playable now.
 var dimmed := false
+## Gold outline: the card winning the trick so far.
+var highlighted := false
 ## Raised off the table (a playable card): a longer shadow.
 var lifted := false:
     set(value):
@@ -25,21 +27,22 @@ var lifted := false:
         queue_redraw()
 
 
-func _init(card_value := -1, card_size := Vector2(90, 130)) -> void:
+func _init(card_value := -1, card_size := Vector2(90, 130), sheen := 0.12) -> void:
     card = card_value
     size = card_size
     custom_minimum_size = card_size
     pivot_offset = card_size / 2
     mouse_filter = Control.MOUSE_FILTER_IGNORE
-    material = _material_for(card_size)
+    material = _material_for(card_size, sheen)
 
 
-static func _material_for(card_size: Vector2) -> ShaderMaterial:
-    var key := Vector2i(card_size)
+static func _material_for(card_size: Vector2, sheen: float) -> ShaderMaterial:
+    var key := "%d,%d,%.2f" % [card_size.x, card_size.y, sheen]
     if not _materials.has(key):
         var mat := ShaderMaterial.new()
         mat.shader = preload("res://ui/card.gdshader")
         mat.set_shader_parameter("card_size", card_size)
+        mat.set_shader_parameter("sheen_strength", sheen)
         _materials[key] = mat
     return _materials[key]
 
@@ -65,7 +68,17 @@ func _draw() -> void:
     else:
         _draw_face()
     if dimmed:
-        _rounded(rect, Color(0.05, 0.08, 0.06, 0.45), radius, Vector2.ZERO)
+        # Washed out to grey: still readable, clearly not playable.
+        _rounded(rect, Color(0.55, 0.55, 0.55, 0.62), radius, Vector2.ZERO)
+    if highlighted:
+        var glow := StyleBoxFlat.new()
+        glow.draw_center = false
+        glow.set_border_width_all(4)
+        glow.border_color = GOLD.lightened(0.2)
+        glow.set_corner_radius_all(radius + 2)
+        glow.shadow_color = Color(1, 0.85, 0.4, 0.5)
+        glow.shadow_size = 8
+        draw_style_box(glow, rect.grow(3))
 
 
 func _rounded(rect: Rect2, color: Color, radius: int, offset: Vector2) -> void:

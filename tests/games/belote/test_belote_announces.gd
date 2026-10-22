@@ -55,10 +55,13 @@ func test_carres() -> void:
     assert_eq(names(announces.find(huits)), [])
 
 
-func test_card_counts_in_carre_and_sequence() -> void:
+func test_card_counts_in_one_announce_only() -> void:
     var found := announces.find(hand([c(P, R.ROI), c(CO, R.ROI), c(CA, R.ROI), c(T, R.ROI),
             c(P, R.DAME), c(P, R.VALET)]))
-    assert_eq(names(found), ["Carré de rois 100", "Tierce 20"])
+    assert_eq(names(found), ["Carré de rois 100"], "the king of spades is in the carré")
+    found = announces.find(hand([c(P, R.ROI), c(CO, R.ROI), c(CA, R.ROI), c(T, R.ROI),
+            c(P, R.DAME), c(P, R.VALET), c(P, R.DIX)]))
+    assert_eq(names(found), ["Carré de rois 100", "Tierce 20"], "D V 10 without the king")
 
 
 func test_comparison() -> void:

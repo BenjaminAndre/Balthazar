@@ -1,7 +1,8 @@
 class_name BeloteAnnounces
 extends RefCounted
 ## Announces (GDD §3.6): sequences and carrés found in an 8-card hand, and which
-## one is best. A card may count in both a sequence and a carré.
+## one is best. A card counts in one announce only: carrés are taken first, then
+## sequences from the cards left.
 ## An announce is {kind: "suite"|"carre", points, length, top, suit, cards, name}.
 
 const CARRE_POINTS := {
@@ -25,11 +26,15 @@ func find(hand: Array[int]) -> Array[Dictionary]:
         if cards.size() == 4:
             found.append({"kind": "carre", "points": CARRE_POINTS[rank], "length": 4, "top": rank,
                     "suit": -1, "cards": cards, "name": "Carré de %s" % CARRE_NAMES[rank]})
+    var free := hand.duplicate()
+    for carre in found:
+        for card in carre.cards:
+            free.erase(card)
     # Rank enum order is the natural order 7 8 9 10 V D R A.
     for suit in 4:
         var run: Array[int] = []
         for rank in 9:
-            if rank < 8 and hand.has(Cards.make(suit, rank)):
+            if rank < 8 and free.has(Cards.make(suit, rank)):
                 run.append(Cards.make(suit, rank))
                 continue
             if run.size() >= 3:
