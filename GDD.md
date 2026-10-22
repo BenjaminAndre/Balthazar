@@ -121,6 +121,7 @@ Total : 152 points, plus 10 de der, soit 162.
 4. ✅ Bots à règles simples (ils comptent les cartes jouées pour savoir qui est maître). Ils battent le jeu au hasard 96 fois sur 100.
 5. ✅ Table en paysage sur téléphone, jouable hors ligne contre 3 bots. Premier test de l'APK.
    - Prochaines idées : bots plus forts (entraînés en parties simulées), choisir de taire une annonce, dernier pli consultable, animations.
-6. En ligne avec Tube : créer ou rejoindre par code, places, bots, retour à sa place.
+6. ✅ (0.2.0) En ligne avec Tube : créer ou rejoindre par code, places (le premier ami en face de l'hôte), bots aux places libres. Un joueur qui décroche est remplacé par un bot et retrouve sa place en rejoignant avec le même code et le même pseudo.
+   - Pas encore : l'hôte qui part arrête la table (pas de migration), choisir sa place dans le salon.
 7. Écran des options de règles, partagé par l'hôte.
 8. Plus tard : tables publiques (Firebase), Coinche, Tarot, classement, jeu hors ligne à proximité.

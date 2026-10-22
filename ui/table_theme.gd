@@ -24,6 +24,8 @@ static func make() -> Theme:
     theme.set_stylebox("panel", "PanelContainer", panel())
     theme.set_stylebox("normal", "LineEdit", _box(PAPER, 0))
     theme.set_color("font_color", "LineEdit", INK)
+    theme.set_color("font_placeholder_color", "LineEdit", Color(INK, 0.45))
+    theme.set_color("caret_color", "LineEdit", INK)
     return theme
 
 

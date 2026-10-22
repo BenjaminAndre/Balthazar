@@ -17,3 +17,20 @@ func take_table_setup() -> Callable:
     var setup := table_setup
     table_setup = Callable()
     return setup
+
+
+## The player's name at online tables, kept between launches.
+var player_name := "":
+    get:
+        if player_name == "":
+            var config := ConfigFile.new()
+            if config.load(PROFILE) == OK:
+                player_name = config.get_value("profile", "name", "")
+        return player_name
+    set(value):
+        player_name = value.strip_edges().left(16)
+        var config := ConfigFile.new()
+        config.set_value("profile", "name", player_name)
+        config.save(PROFILE)
+
+const PROFILE := "user://profile.cfg"

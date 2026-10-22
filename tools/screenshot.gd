@@ -1,7 +1,7 @@
 ﻿extends SceneTree
 ## Renders a screen for a moment and saves a screenshot, to check layouts without the editor:
 ##     godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png [setup] [width]
-## setup: home, bidding, playing (default), last_trick, summary. width defaults to 1600
+## setup: home, lobby, bidding, playing (default), last_trick, summary. width defaults to 1600
 ## (a 20:9 phone at 720p).
 ##
 ## Godot only renders while a window can draw (not headless, not minimized), so the window is
@@ -25,6 +25,15 @@ func _initialize() -> void:
     root.add_child(viewport)
     if setup == "home":
         viewport.add_child(load("res://ui/main.tscn").instantiate())
+    elif setup == "lobby":
+        # A host's lobby with one friend seated, shown without Tube (no network here).
+        var lobby: Control = load("res://ui/lobby.tscn").instantiate()
+        lobby.preview = {"state": 2, "code": "K7QXPA", "my_seat": 0, "info": {"started": false, "seats": [
+                {"name": "Benjamin", "human": true, "here": true},
+                {"name": "", "human": false, "here": false},
+                {"name": "Alice", "human": true, "here": true},
+                {"name": "", "human": false, "here": false}]}}
+        viewport.add_child(lobby)
     else:
         var table: Control = load("res://ui/table.tscn").instantiate()
         viewport.add_child(table)

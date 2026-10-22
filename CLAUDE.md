@@ -5,7 +5,7 @@ An Android app for playing French card games with friends online, made with Godo
 ## Workflow
 
 - Work directly on `main`. Commit each change set, but never push: the author pushes.
-- **Bump `config/version` in `project.godot` in every commit**, as semantic versioning. Only the patch number goes up (0.1.x) until the author says otherwise. CI derives the Android `versionCode` from it.
+- **Bump `config/version` in `project.godot` in every commit**, as semantic versioning. Only the patch number goes up (0.2.x) until the author says otherwise. CI derives the Android `versionCode` from it.
 - Each push runs the tests and builds a debug APK and a Windows build (`.github/workflows/build.yml`). On `main` they replace the assets of the rolling `latest` GitHub release, like Brigade; other branches get 7-day artifacts. The APK is signed with the committed debug keystore (`tools/debug.keystore`), so each build installs over the previous one.
 - The PC has no Android SDK or JDK: Android builds happen only in CI.
 
@@ -31,7 +31,7 @@ godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png playin
   - Rule variants are a `RuleSet`: flags for simple tweaks, swappable strategy objects (bidding, trick legality, announces, scoring) for deeper variants.
 - `bots/` pick moves from the legal moves. They fill empty seats, and headless bot games are the main test of the rules.
 - `table/`: `TableHost` runs a table: it owns the state, plays the bots, and sends each human seat packets `{event, view}` with only what that seat may see. The table screen (`ui/table.gd`) only plays those packets, so the same screen works solo, as host and as guest.
-- `network/`: Tube (WebRTC P2P, sessions shared by code). The host owns the state and sends each player only what that seat may see. **Tests must never open sockets or ports**: this machine has no firewall rights. Use an in-memory transport.
+- `network/`: `Online` (autoload) holds the TubeClient (WebRTC P2P, sessions shared by code) and a `TableLink`, whose RPCs seat the guests and carry moves and per-seat packets. The host's TableHost lives under the link, so it survives scene changes. **Never run Tube on this PC** (it opens sockets): `tests/network/` drives `TableLink` over in-memory `LoopbackPeer`s instead, and `tools/screenshot.gd lobby` shows the lobby without Tube. The host owns the state and sends each player only what that seat may see. **Tests must never open sockets or ports**: this machine has no firewall rights. Use an in-memory transport.
 - `ui/`: the landscape phone table. It only displays the state and turns taps into moves.
   - The look is procedural, with no image files: `felt.gdshader` (mat), `card.gdshader` (light and sheen on every card), `CardView` (faces, backs, shadows). The table rebuilds its nodes on each refresh and animates only what is new since the last one (dealt cards, the card just played, the trick swept to its winner).
 

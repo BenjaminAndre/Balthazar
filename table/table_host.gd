@@ -23,7 +23,7 @@ var state: BeloteState
 var humans: Array[bool] = [true, false, false, false]
 var names: Array[String] = ["Vous", "Gauche", "Partenaire", "Droite"]
 
-## Human seats still reading the hand summary: nobody plays until they continue.
+## Human seats still reading the hand summary: bots wait for all of them, a person for themself.
 var _reading: Dictionary = {}
 var _turn := 0
 var _after_trick := false
@@ -36,14 +36,25 @@ func start(seed_value := -1) -> void:
     _schedule()
 
 
-## Sends every human seat the whole table again, e.g. after a reconnection.
-func resend() -> void:
-    _broadcast({"kind": "start"})
+## Sends the whole table again: to one seat (after a reconnection), or to all.
+func resend(seat := -1) -> void:
+    if seat < 0:
+        _broadcast({"kind": "start"})
+    elif humans[seat]:
+        packet.emit(seat, {"event": {"kind": "start"}, "view": view_for(seat)})
+
+
+## A person takes a seat over from its bot, or leaves it to one.
+func set_human(seat: int, human: bool) -> void:
+    humans[seat] = human
+    if not human:
+        _reading.erase(seat)
+    _schedule()
 
 
 ## A move from a seat. Ignored unless it is that seat's turn and the move is legal.
 func submit(seat: int, move: Dictionary) -> void:
-    if state == null or not _reading.is_empty() or game.is_over(state):
+    if state == null or _reading.has(seat) or game.is_over(state):
         return
     if seat != state.to_act or not game.legal_moves(state).has(move):
         return
