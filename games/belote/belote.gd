@@ -93,9 +93,20 @@ func view_for(state: RefCounted, seat: int) -> Dictionary:
         "played": s.played.duplicate(),
         "announces": _declared(s),
         "announce_team": s.announce_team,
+        "belote_seat": _belote_said(s),
         "winner": s.winner,
         "legal": legal_moves(s) if s.to_act == seat else [],
     }
+
+
+## The seat that said « belote », once it has played the king or queen of trumps
+## (everyone heard it), or -1.
+func _belote_said(s: BeloteState) -> int:
+    if s.belote_seat < 0 or s.phase != BeloteState.Phase.PLAYING:
+        return -1
+    if s.played.has(Cards.make(s.trump, Cards.Rank.ROI)) or s.played.has(Cards.make(s.trump, Cards.Rank.DAME)):
+        return s.belote_seat
+    return -1
 
 
 ## What the table knows of each seat's announces: their names once the seat has

@@ -1,52 +1,31 @@
 # Ce que Zinzin a appris
 
-Écrit par `tools/train.gd` le 2026-10-22 15:58:32.
+Écrit par `tools/train.gd` le 2026-10-22 17:17:37.
 
-## Résultats (points d'avance par donne, donnes dupliquées)
+## Résultats
 
-- contre Facile : +13.9 ± 4.1
-- contre Difficile : +3.1 ± 3.1
+Points d'avance par donne, sur des donnes dupliquées jamais vues :
 
-## Jeu de la carte : poids les plus forts
+- contre Difficile : +2.2 ± 2.9 (1000 donnes)
+- contre Facile : +15.3 ± 4.3 (1000 donnes)
 
-Un poids positif pousse à jouer la carte qui a ce trait, un négatif à l'éviter.
+## Ses réglages
 
-- `charge_si_sur` : +1.54
-- `entame_maitre` : +1.42
-- `atout_si_partenaire` : -1.12
-- `gagne_sur` : +1.02
-- `atout` : -0.91
-- `points` : -0.90
-- `entame_appel` : +0.82
-- `gagne_points_table` : +0.69
-- `entame_coupe_adverse` : -0.67
-- `charge_incertain` : -0.59
-- `maitre` : -0.49
-- `entame_coupe_partenaire` : +0.27
-- `as_cote` : +0.26
-- `coupe` : -0.23
-- `gagne` : +0.21
-- `entame_atout_defense` : -0.20
-- `entame_atout_preneur` : +0.19
-- `dix_expose` : +0.08
-- `force` : -0.08
-- `belote` : -0.07
-- `gagne_en_dernier` : +0.06
-- `dix_cote` : +0.05
-- `appel` : -0.04
-- `defausse_courte` : -0.01
-
-## Enchères
-
-- `bid_valet` : 33.6
-- `bid_neuf` : 21.7
-- `bid_as_atout` : 19.7
-- `bid_dix_atout` : 18.9
-- `bid_petit_atout` : 10.6
-- `bid_longueur4` : 8.1
-- `bid_as` : 11.7
-- `bid_dix_garde` : 5.4
-- `bid_belote` : 12.8
-- `bid_partenaire_donne` : 5.1
-- `seuil_tour1` : 60.1
-- `seuil_tour2` : 63.2
+| Réglage | Valeur | Départ (façon Difficile) |
+|---|---|---|
+| prise au 1er tour : valeur de main exigée | 51.41 | 50.00 |
+| prise au 2e tour : valeur de main exigée | 51.51 | 54.00 |
+| préparer : faire tomber les atouts quand on a pris | 5.71 | 3.00 |
+| encaisser tout de suite ses cartes maîtresses | 4.62 | 2.00 |
+| éviter d'entamer une couleur que l'adversaire coupe | -3.29 | 3.00 |
+| confiance : entamer la couleur appelée par le partenaire | 2.85 | 2.50 |
+| préparer : faire couper le partenaire | 0.38 | 1.50 |
+| entamer petit plutôt que fort | 3.20 | 1.00 |
+| prendre le pli si on le garde avec cette probabilité | 0.56 | 0.50 |
+| points sur la table pour tenter un pli incertain | 1.83 | 10.00 |
+| charger le pli du partenaire à partir de cette probabilité | 0.13 | 0.50 |
+| appeler (petite carte d'une couleur maîtresse) plutôt que se défausser | -0.69 | 1.00 |
+| se défausser d'une couleur courte pour pouvoir couper | 0.38 | 1.00 |
+| éviter d'entamer la couleur qu'un adversaire a appelée | 2.65 | 1.00 |
+| ne tirer les atouts qu'avec au moins cette avance en atouts | 0.55 | 0.00 |
+| prendre plus volontiers quand on est mené à la marque | -0.94 | 0.00 |

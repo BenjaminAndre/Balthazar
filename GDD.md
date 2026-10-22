@@ -111,14 +111,21 @@ Total : 152 points, plus 10 de der, soit 162.
   - Il fait tomber les atouts quand son camp a pris, encaisse ses cartes maîtresses là où personne ne peut couper, et fait couper son partenaire.
   - Il ne charge un pli que s'il est sûr de le garder.
   - Il pratique l'**appel direct** : une petite carte jetée sur le pli du partenaire demande cette couleur, et il entame dans la couleur que son partenaire a appelée.
-- **Zinzin** : chaque décision est une somme pondérée de traits lisibles (« gagne le pli à coup sûr », « charge un pli incertain »…). Les poids sont appris sans tête par `tools/train.gd` :
-  1. un professeur PIMC (Monte Carlo en information parfaite : il distribue les cartes inconnues de façon cohérente avec la table, joue la donne jusqu'au bout pour chaque carte, garde la meilleure) ;
-  2. une imitation de ses choix ;
-  3. un apprentissage par renforcement par stratégies d'évolution sur les points gagnés, y compris les seuils de prise et la prise de risque.
-  Ce qu'il a appris est résumé dans `docs/zinzin.md`.
-  - État au 22/10/2026, sur 4000 donnes jamais vues : Difficile bat Facile de 7,5 points par donne, et Zinzin fait jeu égal avec Difficile (+0,5 ± 1,5).
-  - L'imitation de PIMC l'a fait reculer : le professeur ne bat Difficile que de peu, et les traits de Zinzin ne savent pas tout exprimer.
-  - Pistes : un professeur plus fort (plus de mondes simulés), plus de traits, plus de donnes par génération.
+- **Zinzin** : 13 réglages lisibles, rangés selon les axes du jeu de la carte :
+  - **jouer dessus ou dessous**, ce qui se dédouble à la Belote : la force qu'on dépense et les points qu'on donne ;
+  - **faire confiance au partenaire ou non** : charger son pli dès qu'il le garde avec une probabilité donnée ;
+  - **préparer ou encaisser** : faire tomber les atouts, faire couper le partenaire, ou toucher ses cartes maîtresses tout de suite ;
+  - **la couleur, quand elle est libre** (à l'entame ou en défausse) : suivre l'appel du partenaire, éviter une coupe adverse, appeler, se faire une chicane ;
+  - à part, **l'audace à la prise** : la valeur de main exigée à chaque tour.
+- Les probabilités viennent de `BeloteMemory` (« garde-t-on ce pli ? »). Le génome n'en choisit que les seuils, c'est-à-dire la prise de risque.
+- Les réglages sont trouvés par un algorithme génétique, sans tête (`tools/train.gd`) :
+  - 50 génomes évoluent ; 6 bots Difficile fixes servent d'ancres ;
+  - à chaque génération, chacun joue des donnes dupliquées contre d'autres membres et un ancien champion ;
+  - les meilleurs (points et donnes gagnées) survivent, les autres sont remplacés par des enfants croisés et mutés ;
+  - une ligne par génération résume le champion, mesuré contre Difficile sur des donnes inédites.
+  Le résultat est décrit dans `docs/zinzin.md`.
+  - État au 22/10/2026, sur 4000 donnes indépendantes : Zinzin bat Difficile de 3,8 ± 1,4 points par donne, et Difficile bat Facile de 7,7 ± 2,9.
+  - Suite prévue : donner à Zinzin des infos plus claires (état du contrat, enchères, points encore en jeu, atouts par joueur, place dans le pli).
 - `tools/arena.gd` mesure deux niveaux l'un contre l'autre en donnes dupliquées (chaque donne jouée deux fois, camps échangés).
 
 ## 6. Parties classées (un jour)

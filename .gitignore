@@ -5,3 +5,4 @@
 addons/
 # Export output (rebuilt by CI)
 /build/
+train.log
