@@ -32,6 +32,7 @@ godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png playin
 - `bots/` pick moves from the legal moves. They fill empty seats, and headless bot games are the main test of the rules.
 - `network/`: Tube (WebRTC P2P, sessions shared by code). The host owns the state and sends each player only what that seat may see. **Tests must never open sockets or ports**: this machine has no firewall rights. Use an in-memory transport.
 - `ui/`: the landscape phone table. It only displays the state and turns taps into moves.
+  - The look is procedural, with no image files: `felt.gdshader` (mat), `card.gdshader` (light and sheen on every card), `CardView` (faces, backs, shadows). The table rebuilds its nodes on each refresh and animates only what is new since the last one (dealt cards, the card just played, the trick swept to its winner).
 
 ## Conventions
 

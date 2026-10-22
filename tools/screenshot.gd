@@ -1,4 +1,4 @@
-extends SceneTree
+﻿extends SceneTree
 ## Renders a screen for a moment and saves a screenshot, to check layouts without the editor:
 ##     godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png [setup] [width]
 ## setup: home, bidding, playing (default), summary. width defaults to 1600 (a 20:9 phone at 720p).
@@ -42,7 +42,7 @@ func _initialize() -> void:
                 _play_until(table, func() -> bool: return table.state.deal_number > 0)
                 table._show_summary()
         table._refresh()
-    await create_timer(0.3).timeout
+    await create_timer(1.2).timeout  # let the deal and play animations land
     viewport.get_texture().get_image().save_png(output)
     quit()
 

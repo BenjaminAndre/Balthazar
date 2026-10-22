@@ -26,11 +26,28 @@ var _scored: Dictionary = {}
 var _busy := false
 var _overlay: Control
 var _layer: Control
+var _felt: ShaderMaterial
+
+# Animation bookkeeping: what the last refresh showed, so only new things move.
+var _seen_deal := -1
+var _seen_hand: Dictionary = {}
+var _seen_backs: Array[int] = [0, 0, 0, 0]
+var _seen_turned := -1
+var _center_count := 0
+var _center_leader := -1
+## The trick's card views, to sweep them to the winner.
+var _trick_views: Array[CardView] = []
+## Playable cards gently floating: [view, base_y, phase].
+var _floating: Array = []
+var _time := 0.0
 
 
 func _ready() -> void:
     var felt := ColorRect.new()
     felt.color = FELT
+    _felt = ShaderMaterial.new()
+    _felt.shader = preload("res://ui/felt.gdshader")
+    felt.material = _felt
     felt.mouse_filter = Control.MOUSE_FILTER_IGNORE
     felt.set_anchors_preset(Control.PRESET_FULL_RECT)
     add_child(felt)
@@ -40,6 +57,14 @@ func _ready() -> void:
     add_child(_layer)
     resized.connect(_refresh)
     new_game()
+
+
+func _process(delta: float) -> void:
+    _time += delta
+    for entry in _floating:
+        var view: CardView = entry[0]
+        if is_instance_valid(view) and not view.has_meta("moving"):
+            view.position.y = entry[1] + sin(_time * 2.4 + entry[2]) * 3.0
 
 
 func new_game(seed_value := -1) -> void:
@@ -85,6 +110,8 @@ func _apply(move: Dictionary) -> void:
         _busy = true
         _refresh()
         await get_tree().create_timer(TRICK_DELAY).timeout
+        var winner := (leader + BeloteCards.winning_index(trick, _scored.trump)) % 4
+        await _sweep_trick(winner)
         _busy = false
         _shown_trick = {}
         _after_trick()
@@ -96,6 +123,47 @@ func _apply(move: Dictionary) -> void:
             _bubbles[state.to_act] = "Tout le monde passe : on redistribue"
     _refresh()
     _advance()
+
+
+## The finished trick slides to its winner, shrinking and fading.
+func _sweep_trick(winner: int) -> void:
+    if _trick_views.is_empty():
+        return
+    var target := _seat_origin(winner)
+    var tween := create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+    for view in _trick_views:
+        if is_instance_valid(view):
+            tween.tween_property(view, "position", target - view.size / 2, 0.35)
+            tween.tween_property(view, "scale", Vector2.ONE * 0.45, 0.35)
+            tween.tween_property(view, "modulate:a", 0.0, 0.35)
+    await tween.finished
+
+
+## Where a seat's cards come from and go to, on screen.
+func _seat_origin(seat: int) -> Vector2:
+    var card_h := size.y * 0.25
+    match seat:
+        0: return Vector2(size.x / 2, size.y - card_h / 2)
+        1: return Vector2(16 + card_h * 0.25, size.y / 2)
+        2: return Vector2(size.x / 2, 12 + card_h * 0.25)
+        _: return Vector2(size.x - 16 - card_h * 0.25, size.y / 2)
+
+
+## Moves a freshly placed view in from `from` (centre point), with a delay.
+func _fly_in(view: CardView, from: Vector2, delay: float, from_scale := 0.6) -> void:
+    var target := view.position
+    var target_rotation := view.rotation
+    view.position = from - view.size / 2
+    view.scale = Vector2.ONE * from_scale
+    view.rotation = 0
+    view.modulate.a = 0.0
+    view.set_meta("moving", true)
+    var tween := view.create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+    tween.tween_property(view, "position", target, 0.32).set_delay(delay)
+    tween.tween_property(view, "scale", Vector2.ONE, 0.32).set_delay(delay)
+    tween.tween_property(view, "rotation", target_rotation, 0.32).set_delay(delay)
+    tween.tween_property(view, "modulate:a", 1.0, 0.12).set_delay(delay)
+    tween.chain().tween_callback(view.remove_meta.bind("moving"))
 
 
 ## What a seat says as it moves: its bid, then its announces and belote as it plays.
@@ -152,11 +220,23 @@ func _refresh() -> void:
         child.queue_free()
     var w := size.x
     var h := size.y
+    if _felt:
+        _felt.set_shader_parameter("size", size)
     var card_size := Vector2(h * 0.175, h * 0.25)
     var small := card_size * 0.5
-    _draw_hand(card_size)
-    _draw_opponents(small)
-    _draw_center(card_size)
+    _floating.clear()
+    _trick_views.clear()
+    # The next hand is already dealt under the summary: deal it once the summary closes.
+    if _overlay == null:
+        if state.deal_number != _seen_deal:
+            _seen_deal = state.deal_number
+            _seen_hand.clear()
+            _seen_backs = [0, 0, 0, 0]
+            _seen_turned = -1
+            _center_count = 0
+        _draw_hand(card_size)
+        _draw_opponents(small)
+        _draw_center(card_size)
     _draw_bubbles(card_size, small)
     _draw_info()
     if state.to_act == HUMAN and _shown_trick.is_empty() and _overlay == null \
@@ -174,17 +254,31 @@ func _draw_hand(card_size: Vector2) -> void:
         legal = game.legal_cards(state)
     var n := hand.size()
     var step := minf(card_size.x * 0.85, (size.x * 0.7 - card_size.x) / maxf(n - 1, 1))
-    var x := size.x / 2 - (step * (n - 1) + card_size.x) / 2
-    for card in hand:
+    var mid := (n - 1) / 2.0
+    var deck := Vector2(size.x / 2, size.y * 0.44)
+    var arriving := 0
+    for i in n:
+        var card := hand[i]
         var view := CardView.new(card, card_size)
         var playable := legal.has(card)
-        view.position = Vector2(x, size.y - card_size.y - 12 - (18 if playable else 0))
+        var k := i - mid
+        # A gentle fan: cards tilt outwards and drop a little towards the ends.
+        view.rotation_degrees = k * 2.2
+        view.position = Vector2(size.x / 2 + k * step - card_size.x / 2,
+                size.y - card_size.y - 20 + k * k * 1.5 - (18 if playable else 0))
         view.dimmed = my_turn and not playable
+        view.lifted = playable
         if playable:
             view.mouse_filter = Control.MOUSE_FILTER_STOP
             view.pressed.connect(_on_card_pressed)
+            _floating.append([view, view.position.y, i * 0.7])
         _layer.add_child(view)
-        x += step
+        if not _seen_hand.has(card):
+            _fly_in(view, deck, arriving * 0.07)
+            arriving += 1
+    _seen_hand.clear()
+    for card in hand:
+        _seen_hand[card] = true
 
 
 ## Suits side by side, alternating colours, strongest first; trumps on the left.
@@ -202,15 +296,30 @@ func _display_order(a: int, b: int) -> bool:
 
 
 func _draw_opponents(small: Vector2) -> void:
+    var deck := Vector2(size.x / 2, size.y * 0.44)
     for seat in [1, 2, 3]:
         var n: int = state.hands[seat].size()
+        var mid := (n - 1) / 2.0
         for i in n:
             var back := CardView.new(-1, small)
+            var k := i - mid
+            # Held cards fan towards the centre of the table.
+            var c: Vector2
             match seat:
-                1: back.position = Vector2(16, size.y / 2 - small.y / 2 - (n - 1) * 9 + i * 18)
-                2: back.position = Vector2(size.x / 2 - small.x / 2 - (n - 1) * 11 + i * 22, 12)
-                3: back.position = Vector2(size.x - 16 - small.x, size.y / 2 - small.y / 2 - (n - 1) * 9 + i * 18)
+                1:
+                    c = Vector2(16 + small.y / 2 - k * k * 0.8, size.y / 2 + k * 15)
+                    back.rotation_degrees = 90 + k * 3
+                2:
+                    c = Vector2(size.x / 2 + k * 18, 12 + small.y / 2 - k * k * 0.8)
+                    back.rotation_degrees = 180 - k * 3
+                _:
+                    c = Vector2(size.x - 16 - small.y / 2 + k * k * 0.8, size.y / 2 + k * 15)
+                    back.rotation_degrees = -90 - k * 3
+            back.position = c - small / 2
             _layer.add_child(back)
+            if i >= _seen_backs[seat]:
+                _fly_in(back, deck, (i - _seen_backs[seat]) * 0.07, 1.6)
+        _seen_backs[seat] = n
 
 
 func _seat_anchor(seat: int, card_size: Vector2, small: Vector2) -> Vector2:
@@ -224,10 +333,17 @@ func _seat_anchor(seat: int, card_size: Vector2, small: Vector2) -> Vector2:
 func _draw_center(card_size: Vector2) -> void:
     var center := Vector2(size.x / 2, size.y * 0.44)
     if state.phase == BeloteState.Phase.BID_ROUND_1 or state.phase == BeloteState.Phase.BID_ROUND_2:
-        if _overlay == null:
-            var turned := CardView.new(state.turned, card_size)
-            turned.position = center - card_size / 2
-            _layer.add_child(turned)
+        var turned := CardView.new(state.turned, card_size)
+        turned.position = center - card_size / 2
+        turned.rotation_degrees = -4
+        _layer.add_child(turned)
+        if _seen_turned != state.turned:
+            # Turned over once the hands are dealt: a flip on the horizontal axis.
+            _seen_turned = state.turned
+            turned.scale = Vector2(0, 1)
+            turned.create_tween().tween_property(turned, "scale", Vector2.ONE, 0.25) \
+                    .set_delay(0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+        _floating.append([turned, turned.position.y, 0.0])
         return
     var cards: Array = state.trick
     var leader := state.trick_leader
@@ -236,10 +352,20 @@ func _draw_center(card_size: Vector2) -> void:
         leader = _shown_trick.leader
     var offsets := [Vector2(0, card_size.y * 0.33), Vector2(-card_size.x * 0.9, 0),
             Vector2(0, -card_size.y * 0.33), Vector2(card_size.x * 0.9, 0)]
+    var fresh := cards.size() > _center_count and (leader == _center_leader or _center_count == 0)
     for i in cards.size():
-        var view := CardView.new(cards[i], card_size)
-        view.position = center + offsets[(leader + i) % 4] - card_size / 2
+        var card: int = cards[i]
+        var seat := (leader + i) % 4
+        var view := CardView.new(card, card_size)
+        view.position = center + offsets[seat] - card_size / 2
+        # Each card lands slightly askew, always the same way for the same card.
+        view.rotation_degrees = ((card * 37) % 11 - 5) * 1.1
         _layer.add_child(view)
+        _trick_views.append(view)
+        if fresh and i == cards.size() - 1:
+            _fly_in(view, _seat_origin(seat), 0.0, 0.8 if seat == HUMAN else 0.5)
+    _center_count = cards.size()
+    _center_leader = leader
 
 
 func _draw_bubbles(card_size: Vector2, small: Vector2) -> void:
@@ -277,22 +403,23 @@ func _draw_info() -> void:
         _layer.add_child(dealer)
         dealer.position = Vector2(size.x - 20 - dealer.get_minimum_size().x, 14)
         return
-    var info := _label("Atout       pris par %s" % NAMES[state.taker], 22, Color.WHITE)
-    _layer.add_child(info)
-    info.position = Vector2(size.x - 20 - info.get_minimum_size().x, 14)
-    var badge := Panel.new()
+    var row := HBoxContainer.new()
+    row.add_theme_constant_override("separation", 10)
+    row.add_child(_label("Atout", 22, Color.WHITE))
+    var badge := PanelContainer.new()
     var style := StyleBoxFlat.new()
     style.bg_color = Color(0.98, 0.97, 0.93)
     style.set_corner_radius_all(8)
+    style.set_content_margin_all(4)
     badge.add_theme_stylebox_override("panel", style)
-    badge.size = Vector2(40, 40)
-    badge.position = info.position + Vector2(70, -4)
     var icon := SuitIcon.new()
     icon.suit = state.trump
-    icon.size = Vector2(32, 32)
-    icon.position = Vector2(4, 4)
+    icon.custom_minimum_size = Vector2(30, 30)
     badge.add_child(icon)
-    _layer.add_child(badge)
+    row.add_child(badge)
+    row.add_child(_label("pris par %s" % NAMES[state.taker], 22, Color.WHITE))
+    _layer.add_child(row)
+    row.position = Vector2(size.x - 20 - row.get_combined_minimum_size().x, 10)
 
 
 func _draw_bid_buttons(center: Vector2) -> void:
