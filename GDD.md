@@ -77,8 +77,10 @@ Total : 152 points, plus 10 de der, soit 162.
   | As, 10, Rois, Dames | 100 |
   | 8 ou 7 | 0 (ne valent rien) |
 
+- Pour l'instant, les annonces sont **automatiques** : chacun déclare tout ce qu'il a en jouant sa première carte. *(plus tard : choisir de taire une annonce)*
+- Une même carte peut compter dans une suite et dans un carré. *(à confirmer)*
 - Seule l'équipe qui détient la meilleure annonce marque, et elle marque alors toutes ses annonces.
-  - On compare d'abord les points, puis la hauteur de la carte la plus haute.
+  - On compare d'abord les points. À points égaux, un carré bat une suite *(à confirmer)*, puis la suite la plus longue gagne, puis la carte la plus haute.
   - À égalité, une suite à l'atout l'emporte.
   - Deux suites égales hors atout : le premier joueur à parler l'emporte. *(à confirmer)*
 - *(variante : annonces désactivées)*
@@ -103,7 +105,7 @@ Total : 152 points, plus 10 de der, soit 162.
 - Manille, Président… selon l'envie.
 
 ## 5. Bots
-- Des bots à règles simples choisissent parmi les coups légaux.
+- Des bots à règles simples choisissent parmi les coups légaux. Ils ne voient que ce que voit un joueur (sa main, la table, les cartes jouées) : un bot plus fort pourra remplacer `BeloteBot.choose()`.
 - Ils tiennent les places vides et jouent des milliers de parties sans tête dans les tests.
 
 ## 6. Parties classées (un jour)
@@ -115,9 +117,10 @@ Total : 152 points, plus 10 de der, soit 162.
 ## 7. Feuille de route (0.1.x)
 1. ✅ Squelette : projet, CI (APK + Windows), ce document.
 2. ✅ Moteur de Belote : donne, prise, jeu de la carte, belote, décompte. Tests.
-3. Annonces.
-4. Bots et parties simulées (1000 parties à graine, aucun coup illégal, les points tombent juste).
-5. Table en paysage sur téléphone, jouable hors ligne contre 3 bots. Premier test de l'APK.
+3. ✅ Annonces.
+4. ✅ Bots à règles simples (ils comptent les cartes jouées pour savoir qui est maître). Ils battent le jeu au hasard 96 fois sur 100.
+5. ✅ Table en paysage sur téléphone, jouable hors ligne contre 3 bots. Premier test de l'APK.
+   - Prochaines idées : bots plus forts (entraînés en parties simulées), choisir de taire une annonce, dernier pli consultable, animations.
 6. En ligne avec Tube : créer ou rejoindre par code, places, bots, retour à sa place.
 7. Écran des options de règles, partagé par l'hôte.
 8. Plus tard : tables publiques (Firebase), Coinche, Tarot, classement, jeu hors ligne à proximité.

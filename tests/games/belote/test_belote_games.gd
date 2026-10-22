@@ -17,10 +17,9 @@ func test_random_games() -> void:
             assert_false(moves.is_empty(), "seed %d: no legal move" % seed_value)
             var was_playing := s.phase == BeloteState.Phase.PLAYING
             var deal := s.deal_number
-            var belote := 20 if s.belote_seat >= 0 else 0
             game.apply(s, moves[rng.randi_range(0, moves.size() - 1)])
             if was_playing and (s.deal_number != deal or game.is_over(s)):
-                _check_hand(s.last_hand, belote, seed_value)
+                _check_hand(s.last_hand, seed_value)
             steps += 1
         assert_true(game.is_over(s), "seed %d didn't finish" % seed_value)
         assert_gte(s.scores[s.winner], 101)
@@ -28,8 +27,9 @@ func test_random_games() -> void:
         assert_eq(again.scores, s.scores, "seed %d replays" % seed_value)
 
 
-func _check_hand(result: Dictionary, belote: int, seed_value: int) -> void:
+func _check_hand(result: Dictionary, seed_value: int) -> void:
     if result.outcome == "litige":
         return
-    var total: int = result.raw[0] + result.raw[1] - belote
+    var extras: int = result.belote[0] + result.belote[1] + result.announces[0] + result.announces[1]
+    var total: int = result.raw[0] + result.raw[1] - extras
     assert_true(total == 162 or total == 250, "seed %d: hand worth %d" % [seed_value, total])

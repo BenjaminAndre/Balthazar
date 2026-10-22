@@ -12,7 +12,8 @@ const BELOTE := 20
 ## - outcome is "fait", "dedans" or "litige";
 ## - raw holds each team's points before rounding, and decides the contract;
 ## - points is what goes on the score sheet, after rounding and any litige reserve won;
-## - reserve is the raw litige reserve carried into the next hand.
+## - reserve is the raw litige reserve carried into the next hand;
+## - announces and belote are each team's raw announce and belote points.
 func score_hand(s: BeloteState, rules: BeloteRules) -> Dictionary:
     var taker_team := BeloteState.team_of(s.taker)
     var defence := 1 - taker_team
@@ -48,7 +49,8 @@ func score_hand(s: BeloteState, rules: BeloteRules) -> Dictionary:
     if reserve_winner >= 0 and reserve > 0:
         points[reserve_winner] += round_points(reserve, rules)
         reserve = 0
-    return {"outcome": outcome, "raw": raw, "points": points, "reserve": reserve}
+    return {"outcome": outcome, "raw": raw, "points": points, "reserve": reserve,
+            "announces": s.announce_points.duplicate(), "belote": belote}
 
 
 ## To the nearest ten, a 5 rounding down, then divided by 10: 15 -> 1, 16 -> 2.

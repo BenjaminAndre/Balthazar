@@ -90,9 +90,31 @@ func view_for(state: RefCounted, seat: int) -> Dictionary:
         "scores": s.scores.duplicate(),
         "reserve": s.reserve,
         "last_hand": s.last_hand.duplicate(true),
+        "played": s.played.duplicate(),
+        "announces": _declared(s),
+        "announce_team": s.announce_team,
         "winner": s.winner,
         "legal": legal_moves(s) if s.to_act == seat else [],
     }
+
+
+## What the table knows of each seat's announces: their names once the seat has
+## played its first card, and the cards of the winning team during the second trick.
+func _declared(s: BeloteState) -> Array:
+    var out := []
+    for seat in BeloteState.SEATS:
+        var list := []
+        var declared: bool = s.phase == BeloteState.Phase.PLAYING and s.hands[seat].size() < 8
+        var shown: bool = s.played.size() >= 4 and s.played.size() < 8 \
+                and BeloteState.team_of(seat) == s.announce_team
+        if declared and s.played.size() < 8:
+            for announce in s.announces[seat]:
+                var entry := {"name": announce.name, "points": announce.points}
+                if shown:
+                    entry.cards = (announce.cards as Array[int]).duplicate()
+                list.append(entry)
+        out.append(list)
+    return out
 
 
 ## Deals 3 then 2 cards to each, from the dealer's left, and turns the next one.
@@ -121,6 +143,9 @@ func _deal(s: BeloteState) -> void:
     s.tricks_won = [0, 0]
     s.card_points = [0, 0]
     s.announce_points = [0, 0]
+    s.announces = [[], [], [], []]
+    s.announce_team = -1
+    s.played.clear()
     s.to_act = BeloteState.next_seat(s.dealer)
 
 
@@ -140,6 +165,9 @@ func _finish_deal(s: BeloteState) -> void:
     for seat in BeloteState.SEATS:
         if s.hands[seat].has(king) and s.hands[seat].has(queen):
             s.belote_seat = seat
+    if rules.announces_enabled:
+        for seat in BeloteState.SEATS:
+            s.announces[seat] = rules.announces.find(s.hands[seat])
     s.phase = BeloteState.Phase.PLAYING
     s.trick_leader = BeloteState.next_seat(s.dealer)
     s.to_act = s.trick_leader
@@ -148,6 +176,7 @@ func _finish_deal(s: BeloteState) -> void:
 func _play(s: BeloteState, card: int) -> void:
     s.hands[s.to_act].erase(card)
     s.trick.append(card)
+    s.played.append(card)
     if s.trick.size() < BeloteState.SEATS:
         s.to_act = BeloteState.next_seat(s.to_act)
         return
@@ -158,11 +187,24 @@ func _play(s: BeloteState, card: int) -> void:
     s.tricks_won[team] += 1
     s.last_trick = {"cards": s.trick.duplicate(), "leader": s.trick_leader, "winner": winner}
     s.trick.clear()
+    if s.played.size() == BeloteState.SEATS:
+        _settle_announces(s)
     s.trick_leader = winner
     s.to_act = winner
     if s.hands[winner].is_empty():
         s.card_points[team] += BeloteCards.DIX_DE_DER
         _end_hand(s)
+
+
+## After the first trick, only the team with the best announce scores, all of its own.
+func _settle_announces(s: BeloteState) -> void:
+    s.announce_team = rules.announces.winning_team(s.announces, s.trick_leader, s.trump)
+    if s.announce_team < 0:
+        return
+    for seat in BeloteState.SEATS:
+        if BeloteState.team_of(seat) == s.announce_team:
+            for announce in s.announces[seat]:
+                s.announce_points[s.announce_team] += announce.points
 
 
 func _end_hand(s: BeloteState) -> void:

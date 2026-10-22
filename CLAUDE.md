@@ -17,9 +17,10 @@ An Android app for playing French card games with friends online, made with Godo
 godot --headless --path . --import                   # after adding scripts or assets (registers class_names)
 godot --headless --path . -s addons/gut/gut_cmdln.gd # all tests (GUT, config in .gutconfig.json)
 godot --headless --path . --quit-after 300           # run briefly and check the log for errors
+godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png playing   # home, bidding, playing, summary
 ```
 
-**Never pop a window on the user's monitor** (see double-cooked's `tools/screenshot.gd` for the off-screen technique).
+**Never pop a window on the user's monitor.** `tools/screenshot.gd` renders a 1600×720 screen off-screen into a SubViewport (setups listed in the script).
 
 `bash tools/fetch_deps.sh` downloads the git-ignored `addons/` (tube, gut, webrtc_native) at pinned versions. On this machine, set `CURL_EXTRA=--ssl-revoke-best-effort`.
 

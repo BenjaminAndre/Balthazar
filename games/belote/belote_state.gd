@@ -35,8 +35,14 @@ var last_trick: Dictionary = {}
 var tricks_won: Array[int] = [0, 0]
 ## Card points per team this hand, dix de der included.
 var card_points: Array[int] = [0, 0]
-## Announce points per team this hand (GDD §3.6, filled in slice 3).
+## Each seat's announces this hand (BeloteAnnounces), declared as it plays its first card.
+var announces: Array = [[], [], [], []]
+## Team whose announces count this hand, settled at the end of the first trick, or -1.
+var announce_team := -1
+## Announce points per team this hand (GDD §3.6).
 var announce_points: Array[int] = [0, 0]
+## Cards played this hand, in order: public, and what bots count.
+var played: Array[int] = []
 
 var scores: Array[int] = [0, 0]
 ## Raw points held back by a litige, won by the winner of the next hand.

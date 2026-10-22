@@ -11,7 +11,10 @@ var free_undertrump := false
 var rounded_scores := true
 ## A team reaching this score at the end of a hand wins the game.
 var target := 101
+## Tierces, cinquantes, cents and carrés (GDD §3.6).
+var announces_enabled := true
 
 var trick_rule := BeloteTrickRule.new()
+var announces := BeloteAnnounces.new()
 var bidding := BeloteBidding.new()
 var scoring := BeloteScoring.new()
