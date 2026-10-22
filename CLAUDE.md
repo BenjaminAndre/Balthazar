@@ -6,7 +6,7 @@ An Android app for playing French card games with friends online, made with Godo
 
 - Work directly on `main`. Commit each change set, but never push: the author pushes.
 - **Bump `config/version` in `project.godot` in every commit**, as semantic versioning. Only the patch number goes up (0.1.x) until the author says otherwise. CI derives the Android `versionCode` from it.
-- Each push runs the tests and builds a debug APK and a Windows build (`.github/workflows/build.yml`), uploaded as artifacts kept 7 days. The APK is signed with the committed debug keystore (`tools/debug.keystore`), so each build installs over the previous one.
+- Each push runs the tests and builds a debug APK and a Windows build (`.github/workflows/build.yml`). On `main` they replace the assets of the rolling `latest` GitHub release, like Brigade; other branches get 7-day artifacts. The APK is signed with the committed debug keystore (`tools/debug.keystore`), so each build installs over the previous one.
 - The PC has no Android SDK or JDK: Android builds happen only in CI.
 
 ## Commands

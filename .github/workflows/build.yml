@@ -4,6 +4,10 @@ on:
   push:
   workflow_dispatch:
 
+# Required to create/update the rolling "latest" release.
+permissions:
+  contents: write
+
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
@@ -81,14 +85,30 @@ jobs:
           $GODOT --headless --export-release "Windows Desktop" build/windows/Balthazar.exe
           test -f build/windows/Balthazar.exe
 
-      - uses: actions/upload-artifact@v7
+      - run: cd build/windows && zip -qr ../balthazar-windows.zip .
+
+      # Other branches keep a short-lived artifact; main replaces the rolling release.
+      - if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v7
         with:
-          name: balthazar-android-v${{ steps.version.outputs.version }}
-          path: build/android/balthazar.apk
+          name: balthazar-v${{ steps.version.outputs.version }}
+          path: |
+            build/android/balthazar.apk
+            build/balthazar-windows.zip
           retention-days: 7
 
-      - uses: actions/upload-artifact@v7
+      # Like Brigade: the download URL is stable, so it can be bookmarked once on the phone.
+      - if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
         with:
-          name: balthazar-windows-v${{ steps.version.outputs.version }}
-          path: build/windows
-          retention-days: 7
+          tag_name: latest
+          name: Latest build
+          prerelease: true
+          files: |
+            build/android/balthazar.apk
+            build/balthazar-windows.zip
+          body: |
+            Rolling debug build of `main`: v${{ steps.version.outputs.version }}, commit ${{ github.sha }}.
+
+            Download `balthazar.apk` below and install it on the phone (allow unknown sources for your browser).
+            Each build installs over the previous one.
