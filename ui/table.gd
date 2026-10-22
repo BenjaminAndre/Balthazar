@@ -77,6 +77,7 @@ func _ready() -> void:
 func play_solo(seed_value := -1) -> TableHost:
     host = TableHost.new()
     add_child(host)
+    host.set_bot_level(Session.bot_level)
     attach(host, 0)
     left.connect(func() -> void: get_tree().change_scene_to_file("res://ui/main.tscn"))
     host.start(seed_value)
@@ -466,6 +467,10 @@ func _draw_info() -> void:
             _refresh())
         _layer.add_child(last)
         last.position = Vector2(20, size.y - last.get_combined_minimum_size().y - 16)
+    if _view.has("bot_level") and _view.humans.has(false):
+        var level := _label("Bots : %s" % BeloteBots.NAMES.get(_view.bot_level, ""), 18, Color(1, 1, 1, 0.7))
+        _layer.add_child(level)
+        level.position = Vector2(size.x - 20 - level.get_minimum_size().x, size.y - 34)
     if _view.reserve > 0:
         var reserve := _label("Litige en réserve : %d" % _view.reserve, 20, GOLD)
         reserve.position = Vector2(20, 76)

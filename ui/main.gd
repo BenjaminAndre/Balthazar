@@ -30,6 +30,7 @@ func _ready() -> void:
     _name.text_changed.connect(func(text: String) -> void: Session.player_name = text)
     _column.add_child(_name)
     _column.add_child(_button("Belote contre 3 bots", func() -> void: Session.open_table(Callable())))
+    _column.add_child(LevelPicker.new())
     _column.add_child(_button("Créer une table", _host))
     var join := HBoxContainer.new()
     join.add_theme_constant_override("separation", 12)

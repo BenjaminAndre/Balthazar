@@ -17,20 +17,32 @@ func take_table_setup() -> Callable:
     var setup := table_setup
     table_setup = Callable()
     return setup
-
+const PROFILE := "user://profile.cfg"
 
 ## The player's name at online tables, kept between launches.
-var player_name := "":
+var player_name: String:
     get:
-        if player_name == "":
-            var config := ConfigFile.new()
-            if config.load(PROFILE) == OK:
-                player_name = config.get_value("profile", "name", "")
-        return player_name
+        return _profile().get_value("profile", "name", "")
     set(value):
-        player_name = value.strip_edges().left(16)
-        var config := ConfigFile.new()
-        config.set_value("profile", "name", player_name)
-        config.save(PROFILE)
+        _save("name", value.strip_edges().left(16))
 
-const PROFILE := "user://profile.cfg"
+## The bots' level (BeloteBots.LEVELS), kept between launches.
+var bot_level: String:
+    get:
+        return _profile().get_value("profile", "bots", "difficile")
+    set(value):
+        _save("bots", value)
+
+var _config: ConfigFile
+
+
+func _profile() -> ConfigFile:
+    if _config == null:
+        _config = ConfigFile.new()
+        _config.load(PROFILE)
+    return _config
+
+
+func _save(key: String, value: Variant) -> void:
+    _profile().set_value("profile", key, value)
+    _config.save(PROFILE)

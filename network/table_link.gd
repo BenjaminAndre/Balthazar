@@ -49,6 +49,7 @@ func open(my_name: String) -> void:
     host = TableHost.new()
     add_child(host)
     host.packet.connect(_on_host_packet)
+    host.set_bot_level(Session.bot_level)
     if not multiplayer.peer_disconnected.is_connected(_on_peer_left):
         multiplayer.peer_disconnected.connect(_on_peer_left)
     _publish()
@@ -177,7 +178,7 @@ func _publish() -> void:
     for seat in 4:
         seats.append({"name": _seats[seat].name, "human": _seats[seat].human,
                 "here": _seats[seat].peer != 0})
-    info = {"seats": seats, "started": _started}
+    info = {"seats": seats, "started": _started, "bots": host.bot_level}
     _lobby.rpc(info)
     lobby_changed.emit(info)
 
@@ -212,3 +213,9 @@ func _deliver(data: Dictionary) -> void:
         packet_received.emit(data)
     else:
         _pending.append(data)
+
+
+## Host: which bots play the free seats; guests see it in the lobby.
+func set_bot_level(level: String) -> void:
+    host.set_bot_level(level)
+    _publish()

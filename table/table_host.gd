@@ -17,7 +17,8 @@ var trick_pause := 1.8
 var auto_bots := true
 
 var game := Belote.new()
-var bot := BeloteBot.new()
+var bot: BeloteBot = BeloteBots.make("facile")
+var bot_level := "facile"
 var state: BeloteState
 ## Which seats are played by people; the others are bots.
 var humans: Array[bool] = [true, false, false, false]
@@ -52,6 +53,12 @@ func set_human(seat: int, human: bool) -> void:
     _schedule()
 
 
+## Which bots play the free seats (BeloteBots.LEVELS).
+func set_bot_level(level: String) -> void:
+    bot_level = level
+    bot = BeloteBots.make(level)
+
+
 ## A move from a seat. Ignored unless it is that seat's turn and the move is legal.
 func submit(seat: int, move: Dictionary) -> void:
     if state == null or _reading.has(seat) or game.is_over(state):
@@ -73,6 +80,7 @@ func view_for(seat: int) -> Dictionary:
     view.humans = humans.duplicate()
     view.deal_number = state.deal_number
     view.target = game.rules.target
+    view.bot_level = bot_level
     # Points so far this hand (cards and settled announces), shown live on the table.
     view.live_points = [state.card_points[0] + state.announce_points[0],
             state.card_points[1] + state.announce_points[1]]

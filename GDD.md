@@ -105,8 +105,18 @@ Total : 152 points, plus 10 de der, soit 162.
 - Manille, Président… selon l'envie.
 
 ## 5. Bots
-- Des bots à règles simples choisissent parmi les coups légaux. Ils ne voient que ce que voit un joueur (sa main, la table, les cartes jouées) : un bot plus fort pourra remplacer `BeloteBot.choose()`.
-- Ils tiennent les places vides et jouent des milliers de parties sans tête dans les tests.
+- Les bots ne voient que ce que voit un joueur : sa main, la table, les cartes jouées. Ils tiennent les places vides. Le niveau se choisit à l'accueil (partie solo) ou dans le salon (l'hôte).
+- **Facile** : des règles simples ; il sait quelles cartes sont maîtresses.
+- **Difficile** : il compte les cartes (`BeloteMemory`) : qui a joué quoi, qui n'a plus de quelle couleur, qui ne peut plus monter à l'atout.
+  - Il fait tomber les atouts quand son camp a pris, encaisse ses cartes maîtresses là où personne ne peut couper, et fait couper son partenaire.
+  - Il ne charge un pli que s'il est sûr de le garder.
+  - Il pratique l'**appel direct** : une petite carte jetée sur le pli du partenaire demande cette couleur, et il entame dans la couleur que son partenaire a appelée.
+- **Zinzin** : chaque décision est une somme pondérée de traits lisibles (« gagne le pli à coup sûr », « charge un pli incertain »…). Les poids sont appris sans tête par `tools/train.gd` :
+  1. un professeur PIMC (Monte Carlo en information parfaite : il distribue les cartes inconnues de façon cohérente avec la table, joue la donne jusqu'au bout pour chaque carte, garde la meilleure) ;
+  2. une imitation de ses choix ;
+  3. un apprentissage par renforcement par stratégies d'évolution sur les points gagnés, y compris les seuils de prise et la prise de risque.
+  Ce qu'il a appris est résumé dans `docs/zinzin.md`.
+- `tools/arena.gd` mesure deux niveaux l'un contre l'autre en donnes dupliquées (chaque donne jouée deux fois, camps échangés).
 
 ## 6. Parties classées (un jour)
 - Entre amis, faire confiance à l'hôte suffit. Pour du classé, il faudra un arbitre : un serveur Godot sans tête ou Nakama, qui rejoue le journal (graine + coups) ou tient lui-même la table.

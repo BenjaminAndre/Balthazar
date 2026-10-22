@@ -1,0 +1,157 @@
+class_name BeloteMemory
+extends RefCounted
+## What a careful player knows from the table alone (one seat's view): who played
+## each card, which suits each seat is out of, the strongest trump a seat may
+## still hold, and the suit each seat called for (appel direct: a small card
+## discarded on the partner's trick asks for that suit).
+
+const NO_CAP := 99
+
+var seat := 0
+var trump := -1
+var hand: Array[int] = []
+## Cards neither in our hand nor played.
+var unseen: Array[int] = []
+## Per seat: {suit: true} for suits it has shown it is out of.
+var voids: Array = [{}, {}, {}, {}]
+## Per seat: it holds no trump at least as strong as this (BeloteCards.strength).
+var trump_cap: Array[int] = [NO_CAP, NO_CAP, NO_CAP, NO_CAP]
+## Per seat: the suit it called for, or -1.
+var calls: Array[int] = [-1, -1, -1, -1]
+## The trick on the table and who led it.
+var trick: Array[int] = []
+var leader := 0
+## Who played each card so far: {card: seat}.
+var played_by: Dictionary = {}
+## Per team, this hand: tricks won and card points (dix de der comes at the end).
+var tricks_won: Array[int] = [0, 0]
+var card_points: Array[int] = [0, 0]
+
+
+static func from_view(view: Dictionary) -> BeloteMemory:
+    var memory := BeloteMemory.new()
+    memory.seat = view.seat
+    memory.trump = view.trump
+    memory.hand.assign(view.hand)
+    memory.trick.assign(view.trick)
+    memory.leader = view.trick_leader
+    var played: Array[int] = []
+    played.assign(view.played)
+    for card in Cards.COUNT:
+        if not memory.hand.has(card) and not played.has(card):
+            memory.unseen.append(card)
+    if memory.trump < 0:
+        return memory
+    # Replay the hand: the first trick is led from the dealer's left, then by each winner.
+    var lead := (int(view.dealer) + 1) % 4
+    var i := 0
+    while i < played.size():
+        var cards: Array[int] = []
+        for k in mini(4, played.size() - i):
+            memory._learn(cards, played[i + k], (lead + k) % 4, lead)
+            memory.played_by[played[i + k]] = (lead + k) % 4
+            cards.append(played[i + k])
+        if cards.size() == 4:
+            lead = (lead + BeloteCards.winning_index(cards, memory.trump)) % 4
+            memory.tricks_won[lead % 2] += 1
+            for c in cards:
+                memory.card_points[lead % 2] += BeloteCards.points(c, memory.trump)
+        i += 4
+    return memory
+
+
+static func team(s: int) -> int:
+    return s % 2
+
+
+func is_void(s: int, suit: int) -> bool:
+    return voids[s].has(suit)
+
+
+## Whether seat `s` might still hold `card`, as far as the table shows.
+func may_hold(s: int, card: int) -> bool:
+    if s == seat or not unseen.has(card):
+        return false
+    var suit := Cards.suit_of(card)
+    if is_void(s, suit):
+        return false
+    return suit != trump or BeloteCards.strength(card, trump) < trump_cap[s]
+
+
+## Whether some seat other than us might still hold a card of `suit`.
+func anyone_may_hold_suit(suit: int, seats: Array) -> bool:
+    for card in unseen:
+        if Cards.suit_of(card) == suit:
+            for s in seats:
+                if may_hold(s, card):
+                    return true
+    return false
+
+
+## Our card is the best left in its suit: nobody can follow higher.
+func is_master(card: int) -> bool:
+    for other in unseen:
+        if Cards.suit_of(other) == Cards.suit_of(card) \
+                and BeloteCards.strength(other, trump) > BeloteCards.strength(card, trump):
+            return false
+    return true
+
+
+## Whether seat `s`, still to play, could beat `cards` (the trick as it would be).
+## A seat is assumed to follow suit unless it has shown it is out of it.
+func could_beat(s: int, cards: Array[int]) -> bool:
+    var led := Cards.suit_of(cards[0])
+    var best := cards[BeloteCards.winning_index(cards, trump)]
+    var best_suit := Cards.suit_of(best)
+    if not is_void(s, led):
+        if best_suit != led:
+            return false
+        for card in unseen:
+            if Cards.suit_of(card) == led and may_hold(s, card) \
+                    and BeloteCards.strength(card, trump) > BeloteCards.strength(best, trump):
+                return true
+        return false
+    for card in unseen:
+        if Cards.suit_of(card) == trump and may_hold(s, card):
+            if best_suit != trump or BeloteCards.strength(card, trump) > BeloteCards.strength(best, trump):
+                return true
+    return false
+
+
+## True when `cards` (the trick with our card added) cannot be taken by the seats still to play.
+func surely_won(cards: Array[int]) -> bool:
+    for k in range(cards.size(), 4):
+        var s := (leader + k) % 4
+        if team(s) != team((leader + BeloteCards.winning_index(cards, trump)) % 4) and could_beat(s, cards):
+            return false
+    return true
+
+
+## Learns from `seat_played` playing `card` onto `before` (a trick led by `lead`).
+func _learn(before: Array[int], card: int, seat_played: int, lead: int) -> void:
+    if before.is_empty():
+        return
+    var led := Cards.suit_of(before[0])
+    var suit := Cards.suit_of(card)
+    var best_trump := -1
+    for c in before:
+        if Cards.suit_of(c) == trump:
+            best_trump = maxi(best_trump, BeloteCards.strength(c, trump))
+    var master := (lead + BeloteCards.winning_index(before, trump)) % 4
+    var partner_master := team(master) == team(seat_played)
+    if suit == led:
+        if led == trump and BeloteCards.strength(card, trump) < best_trump:
+            # Had to climb at trumps and didn't: nothing stronger left.
+            trump_cap[seat_played] = mini(trump_cap[seat_played], best_trump)
+        return
+    voids[seat_played][led] = true
+    if suit == trump:
+        if best_trump >= 0 and BeloteCards.strength(card, trump) < best_trump and not partner_master:
+            trump_cap[seat_played] = mini(trump_cap[seat_played], best_trump)
+        return
+    if led == trump or not partner_master:
+        # Had to cut (or follow trumps) and couldn't.
+        voids[seat_played][trump] = true
+    elif calls[seat_played] < 0 and BeloteCards.points(card, trump) == 0:
+        # A small card on the partner's trick: a call for that suit.
+        calls[seat_played] = suit

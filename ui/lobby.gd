@@ -83,6 +83,19 @@ func _refresh() -> void:
         column.add_child(grid)
         column.add_child(_label("Les partenaires sont dans la même équipe. Les places libres sont tenues par des bots.",
                 16, TableTheme.INK.lightened(0.35)))
+    if hosting:
+        var picker := LevelPicker.new()
+        picker.level_changed.connect(func(level: String) -> void: Online.link.set_bot_level(level))
+        var row := PanelContainer.new()
+        var dark := StyleBoxFlat.new()
+        dark.bg_color = Color(0.08, 0.3, 0.17)
+        dark.set_corner_radius_all(10)
+        dark.set_content_margin_all(8)
+        row.add_theme_stylebox_override("panel", dark)
+        row.add_child(picker)
+        column.add_child(row)
+    elif info.has("bots"):
+        column.add_child(_label("Bots : %s" % BeloteBots.NAMES.get(info.bots, info.bots), 20))
     var buttons := HBoxContainer.new()
     buttons.alignment = BoxContainer.ALIGNMENT_CENTER
     buttons.add_theme_constant_override("separation", 16)
