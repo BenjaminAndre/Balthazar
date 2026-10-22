@@ -116,6 +116,9 @@ Total : 152 points, plus 10 de der, soit 162.
   2. une imitation de ses choix ;
   3. un apprentissage par renforcement par stratégies d'évolution sur les points gagnés, y compris les seuils de prise et la prise de risque.
   Ce qu'il a appris est résumé dans `docs/zinzin.md`.
+  - État au 22/10/2026, sur 4000 donnes jamais vues : Difficile bat Facile de 7,5 points par donne, et Zinzin fait jeu égal avec Difficile (+0,5 ± 1,5).
+  - L'imitation de PIMC l'a fait reculer : le professeur ne bat Difficile que de peu, et les traits de Zinzin ne savent pas tout exprimer.
+  - Pistes : un professeur plus fort (plus de mondes simulés), plus de traits, plus de donnes par génération.
 - `tools/arena.gd` mesure deux niveaux l'un contre l'autre en donnes dupliquées (chaque donne jouée deux fois, camps échangés).
 
 ## 6. Parties classées (un jour)
