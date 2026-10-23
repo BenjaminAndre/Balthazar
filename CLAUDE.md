@@ -35,7 +35,7 @@ godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png playin
 - `table/`: `TableHost` runs a table: it owns the state, plays the bots, and sends each human seat packets `{event, view}` with only what that seat may see. The table screen (`ui/table.gd`) only plays those packets, so the same screen works solo, as host and as guest.
 - `network/`: `Online` (autoload) holds the TubeClient (WebRTC P2P, sessions shared by code) and a `TableLink`, whose RPCs seat the guests and carry moves and per-seat packets. The host's TableHost lives under the link, so it survives scene changes. **Never run Tube on this PC** (it opens sockets): `tests/network/` drives `TableLink` over in-memory `LoopbackPeer`s instead, and `tools/screenshot.gd lobby` shows the lobby without Tube. The host owns the state and sends each player only what that seat may see. **Tests must never open sockets or ports**: this machine has no firewall rights. Use an in-memory transport.
 - `ui/`: the landscape phone table. It only displays the state and turns taps into moves.
-  - The look is procedural, with no image files: `felt.gdshader` (mat), `card.gdshader` (light and sheen on every card), `CardView` (faces, backs, shadows). The table rebuilds its nodes on each refresh and animates only what is new since the last one (dealt cards, the card just played, the trick swept to its winner).
+  - The look is procedural, with no image files: `felt.gdshader` (mat), `card.gdshader` (light from the top on every card), `CardView` (faces, backs, shadows). The table rebuilds its nodes on each refresh and animates only what is new since the last one (dealt cards, the card just played, the trick swept to its winner).
 
 ## Conventions
 

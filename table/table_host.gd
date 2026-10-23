@@ -81,9 +81,13 @@ func view_for(seat: int) -> Dictionary:
     view.deal_number = state.deal_number
     view.target = game.rules.target
     view.bot_level = bot_level
-    # Points so far this hand (cards and settled announces), shown live on the table.
-    view.live_points = [state.card_points[0] + state.announce_points[0],
-            state.card_points[1] + state.announce_points[1]]
+    # Points so far this hand, shown live on the table: cards won, and apart the
+    # settled announces plus the belote once it has been said.
+    view.live_points = state.card_points.duplicate()
+    var extra := state.announce_points.duplicate()
+    if view.belote_seat >= 0:
+        extra[view.belote_seat % 2] += BeloteScoring.BELOTE
+    view.live_extra = extra
     return view
 
 

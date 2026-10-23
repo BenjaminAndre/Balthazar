@@ -1,7 +1,7 @@
 class_name CardView
 extends Control
 ## One card, face up or (card = -1) face down, drawn in code: a soft drop shadow,
-## a lit paper face, and a shared shader for light and sheen (card.gdshader).
+## a lit paper face, and a shared shader for the light from the top (card.gdshader).
 
 signal pressed(card: int)
 
@@ -27,22 +27,21 @@ var lifted := false:
         queue_redraw()
 
 
-func _init(card_value := -1, card_size := Vector2(90, 130), sheen := 0.12) -> void:
+func _init(card_value := -1, card_size := Vector2(90, 130)) -> void:
     card = card_value
     size = card_size
     custom_minimum_size = card_size
     pivot_offset = card_size / 2
     mouse_filter = Control.MOUSE_FILTER_IGNORE
-    material = _material_for(card_size, sheen)
+    material = _material_for(card_size)
 
 
-static func _material_for(card_size: Vector2, sheen: float) -> ShaderMaterial:
-    var key := "%d,%d,%.2f" % [card_size.x, card_size.y, sheen]
+static func _material_for(card_size: Vector2) -> ShaderMaterial:
+    var key := "%d,%d" % [card_size.x, card_size.y]
     if not _materials.has(key):
         var mat := ShaderMaterial.new()
         mat.shader = preload("res://ui/card.gdshader")
         mat.set_shader_parameter("card_size", card_size)
-        mat.set_shader_parameter("sheen_strength", sheen)
         _materials[key] = mat
     return _materials[key]
 

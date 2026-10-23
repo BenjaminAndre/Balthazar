@@ -1,7 +1,7 @@
 ﻿extends SceneTree
 ## Renders a screen for a moment and saves a screenshot, to check layouts without the editor:
 ##     godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png [setup] [width]
-## setup: home, lobby, bidding, playing (default), last_trick, summary. width defaults to 1600
+## setup: home, lobby, bidding, playing (default), announces, last_trick, summary. width defaults to 1600
 ## (a 20:9 phone at 720p).
 ##
 ## Godot only renders while a window can draw (not headless, not minimized), so the window is
@@ -52,6 +52,15 @@ func _initialize() -> void:
                 host.resend()
             "playing":
                 _fast_forward(host, func() -> bool: return state.played.size() >= 6 and state.to_act == 0)
+                host.resend()
+            "announces":
+                # The first seed whose second trick shows announces, with us to play.
+                for seed_value in 200:
+                    host.start(seed_value)
+                    state = host.state
+                    _fast_forward(host, func() -> bool: return state.played.size() >= 5 or state.deal_number > 0)
+                    if state.announce_team >= 0 and state.deal_number == 0:
+                        break
                 host.resend()
             "last_trick", "summary":
                 # Everything but the hand's last card without the screen, then the last card through it.

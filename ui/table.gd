@@ -16,7 +16,6 @@ const LAST_TRICK_DELAY := 2.4
 const FELT := Color(0.08, 0.33, 0.19)
 const BUBBLE := Color(1, 0.98, 0.88)
 const GOLD := Color(1, 0.84, 0.35)
-const HAND_SHEEN := 0.035
 
 ## The host this screen runs itself (solo, or the online host), if any.
 var host: TableHost
@@ -274,6 +273,8 @@ func _refresh() -> void:
             _draw_hand(card_size)
             _draw_opponents(small)
         _draw_center(card_size)
+        if not _hide_hands:
+            _draw_shown_announces(card_size, small)
     _draw_bubbles(card_size, small)
     _draw_info()
     if _my_turn() and _shown_trick.is_empty() and _overlay == null and not _hide_hands \
@@ -297,7 +298,7 @@ func _draw_hand(card_size: Vector2) -> void:
     var arriving := 0
     for i in n:
         var card := hand[i]
-        var view := CardView.new(card, card_size, HAND_SHEEN)
+        var view := CardView.new(card, card_size)
         var playable := legal.has(card)
         var k := i - mid
         # A gentle fan: cards tilt outwards and drop a little towards the ends.
@@ -416,7 +417,7 @@ func _draw_last_trick(mini: Vector2) -> void:
     var origin := Vector2(24, 120)
     for i in last.cards.size():
         var seat: int = (int(last.leader) + i) % 4
-        var view := CardView.new(last.cards[i], mini, 0.0)
+        var view := CardView.new(last.cards[i], mini)
         var offset: Vector2 = [Vector2(1, 2), Vector2(0, 1), Vector2(1, 0), Vector2(2, 1)][_place(seat)]
         view.position = origin + offset * Vector2(mini.x * 0.75, mini.y * 0.45)
         view.highlighted = seat == int(last.winner)
@@ -448,6 +449,34 @@ func _draw_bubbles(card_size: Vector2, small: Vector2) -> void:
         bubble.position = anchor - Vector2(bubble.get_minimum_size().x / 2, 0)
 
 
+## "34", or "34 (+20)" when announces or the belote add points apart from the cards.
+func _points_text(cards: int, extra: int) -> String:
+    return "%d (+%d)" % [cards, extra] if extra > 0 else str(cards)
+
+
+## The announce cards the table may see (the winning team's, during the second
+## trick), in small, between each announcing player and the middle of the table.
+func _draw_shown_announces(card_size: Vector2, small: Vector2) -> void:
+    var mini := card_size * 0.5
+    var center := Vector2(size.x / 2, size.y * 0.44)
+    for seat in 4:
+        var cards: Array[int] = []
+        for entry in _view.announces[seat]:
+            for card in entry.get("cards", []):
+                if not cards.has(int(card)):
+                    cards.append(int(card))
+        if cards.is_empty():
+            continue
+        var anchor := _seat_anchor(seat, card_size, small)
+        var spot := anchor.lerp(center, 0.4) if seat != _me else Vector2(size.x / 2, size.y - card_size.y - 120)
+        var step := mini.x * 0.62
+        var left := spot.x - (step * (cards.size() - 1) + mini.x) / 2
+        for i in cards.size():
+            var view := CardView.new(cards[i], mini)
+            view.position = Vector2(left + i * step, spot.y - mini.y / 2)
+            _layer.add_child(view)
+
+
 func _draw_info() -> void:
     var scores := _team_points(_view.scores)
     var score := _label("Nous %d  ·  Eux %d   (en %d)" % [scores[0], scores[1], _view.target], 24, Color.WHITE)
@@ -455,7 +484,9 @@ func _draw_info() -> void:
     _layer.add_child(score)
     if _view.phase == BeloteState.Phase.PLAYING and not _hide_hands:
         var live := _team_points(_view.live_points)
-        var hand := _label("Cette donne : %d  ·  %d" % [live[0], live[1]], 20, GOLD)
+        var extra := _team_points(_view.get("live_extra", [0, 0]))
+        var hand := _label("Cette donne : Nous %s  ·  Eux %s" % [_points_text(live[0], extra[0]),
+                _points_text(live[1], extra[1])], 20, GOLD)
         hand.position = Vector2(20, 46)
         _layer.add_child(hand)
         var last := Button.new()
