@@ -46,3 +46,12 @@ func _profile() -> ConfigFile:
 func _save(key: String, value: Variant) -> void:
     _profile().set_value("profile", key, value)
     _config.save(PROFILE)
+
+
+## A raw value of the profile (TableSettings keeps its settings there as JSON).
+func get_raw(key: String, default: Variant) -> Variant:
+    return _profile().get_value("profile", key, default)
+
+
+func set_raw(key: String, value: Variant) -> void:
+    _save(key, value)

@@ -99,6 +99,12 @@ Total : 152 points, plus 10 de der, soit 162.
   - *(variante : points bruts sans arrondi)*
 - La partie se joue en **101 points** *(variante : 501 ou 1000 en points bruts)*.
 
+### 3.8 Paramètres de table
+Les paramètres sont rangés dans le profil (écran « Paramètres »). Une partie solo les utilise tels quels ; dans une table en ligne, ceux de l'hôte sont repris dans le salon, où il peut encore les changer, et les invités les voient.
+- **Général : fin automatique** (activée par défaut). Quand un joueur a la main et que toutes ses cartes restantes gagnent à coup sûr (l'hôte voit toutes les mains), elles se jouent toutes seules, atouts d'abord.
+- **Belote : annonces** (activées par défaut).
+- **Belote : relance à 12** (désactivée par défaut). Pendant les enchères, un joueur dont les 5 cartes valent 11 points ou moins (valeurs hors atout : As 11, 10 10, Roi 4, Dame 3, Valet 2) peut demander à redistribuer ; la donne passe au joueur suivant, comme quand tout le monde passe.
+
 ## 4. Autres jeux (plus tard)
 - **Coinche** : enchères 80 à 160, puis capot ; coinche et surcoinche. Elle réutilise le jeu de la carte de la Belote ; seuls l'enchère et le décompte changent.
 - **Tarot** : 78 cartes, 3 à 5 joueurs, avec son propre moteur.

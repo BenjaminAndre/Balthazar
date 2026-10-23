@@ -77,6 +77,7 @@ func play_solo(seed_value := -1) -> TableHost:
     host = TableHost.new()
     add_child(host)
     host.set_bot_level(Session.bot_level)
+    host.settings = TableSettings.load_profile()
     attach(host, 0)
     left.connect(func() -> void: get_tree().change_scene_to_file("res://ui/main.tscn"))
     host.start(seed_value)
@@ -157,7 +158,8 @@ func _play(event: Dictionary, view: Dictionary) -> void:
             return
     elif event.has("redeal"):
         _bubbles = ["", "", "", ""]
-        _bubbles[view.to_act] = "Tout le monde passe : on redistribue"
+        _bubbles[view.to_act] = "Relance : on redistribue" if move.kind == "relance" \
+                else "Tout le monde passe : on redistribue"
     _refresh()
 
 
@@ -540,6 +542,8 @@ func _draw_bid_buttons(center: Vector2) -> void:
         button.custom_minimum_size = Vector2(150, 64)
         if move.kind == "pass":
             button.text = "Passer"
+        elif move.kind == "relance":
+            button.text = "Relancer"
         else:
             # "Prendre" and the suit drawn, like the cards: no glyphs (CLAUDE.md).
             var inner := HBoxContainer.new()

@@ -13,6 +13,9 @@ var rounded_scores := true
 var target := 101
 ## Tierces, cinquantes, cents and carrés (GDD §3.6).
 var announces_enabled := true
+## « Relance à 12 »: a player whose hand is worth this many points or fewer (at
+## the bidding, before any trump) may ask for a redeal. -1 turns it off.
+var redeal_max_points := -1
 
 var trick_rule := BeloteTrickRule.new()
 var announces := BeloteAnnounces.new()

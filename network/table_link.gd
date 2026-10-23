@@ -50,6 +50,8 @@ func open(my_name: String) -> void:
     add_child(host)
     host.packet.connect(_on_host_packet)
     host.set_bot_level(Session.bot_level)
+    # The host's profile settings come with it; it may change them in the lobby.
+    host.settings = TableSettings.load_profile()
     if not multiplayer.peer_disconnected.is_connected(_on_peer_left):
         multiplayer.peer_disconnected.connect(_on_peer_left)
     _publish()
@@ -178,7 +180,7 @@ func _publish() -> void:
     for seat in 4:
         seats.append({"name": _seats[seat].name, "human": _seats[seat].human,
                 "here": _seats[seat].peer != 0})
-    info = {"seats": seats, "started": _started, "bots": host.bot_level}
+    info = {"seats": seats, "started": _started, "bots": host.bot_level, "settings": host.settings}
     _lobby.rpc(info)
     lobby_changed.emit(info)
 
@@ -218,4 +220,12 @@ func _deliver(data: Dictionary) -> void:
 ## Host: which bots play the free seats; guests see it in the lobby.
 func set_bot_level(level: String) -> void:
     host.set_bot_level(level)
+    _publish()
+
+
+## Host: changes one table setting; guests see it in the lobby.
+func set_setting(group: String, key: String, setting_value: Variant) -> void:
+    var settings := host.settings.duplicate(true)
+    settings[group][key] = setting_value
+    host.settings = TableSettings.complete(settings)
     _publish()

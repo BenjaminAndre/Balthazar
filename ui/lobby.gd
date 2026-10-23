@@ -63,8 +63,14 @@ func _refresh() -> void:
     if Online.error != "" and preview.is_empty():
         column.add_child(_label(Online.error, 20, TableTheme.RED))
     var seats: Array = info.get("seats", [])
+    var body := HBoxContainer.new()
+    body.add_theme_constant_override("separation", 36)
+    var left := VBoxContainer.new()
+    left.add_theme_constant_override("separation", 12)
+    body.add_child(left)
+    column.add_child(body)
     if not seats.is_empty():
-        column.add_child(HSeparator.new())
+        left.add_child(HSeparator.new())
         var grid := GridContainer.new()
         grid.columns = 2
         grid.add_theme_constant_override("h_separation", 32)
@@ -80,9 +86,12 @@ func _refresh() -> void:
             if entry.human and not entry.here:
                 text += " · absent, un bot joue"
             grid.add_child(_label(text, 24, TableTheme.INK if entry.human else TableTheme.INK.lightened(0.45)))
-        column.add_child(grid)
-        column.add_child(_label("Les partenaires sont dans la même équipe. Les places libres sont tenues par des bots.",
-                16, TableTheme.INK.lightened(0.35)))
+        left.add_child(grid)
+        var hint := _label("Les partenaires sont dans la même équipe. Les places libres sont tenues par des bots.",
+                16, TableTheme.INK.lightened(0.35))
+        hint.autowrap_mode = TextServer.AUTOWRAP_WORD
+        hint.custom_minimum_size.x = 400
+        left.add_child(hint)
     if hosting:
         var picker := LevelPicker.new()
         picker.level_changed.connect(func(level: String) -> void: Online.link.set_bot_level(level))
@@ -93,9 +102,15 @@ func _refresh() -> void:
         dark.set_content_margin_all(8)
         row.add_theme_stylebox_override("panel", dark)
         row.add_child(picker)
-        column.add_child(row)
+        left.add_child(row)
     elif info.has("bots"):
-        column.add_child(_label("Bots : %s" % BeloteBots.NAMES.get(info.bots, info.bots), 20))
+        left.add_child(_label("Bots : %s" % BeloteBots.NAMES.get(info.bots, info.bots), 20))
+    if info.has("settings"):
+        # The host's settings: it may change them here; the guests see them.
+        var form := SettingsForm.new(info.settings, hosting)
+        form.setting_changed.connect(func(group: String, key: String, value: Variant) -> void:
+            Online.link.set_setting(group, key, value))
+        body.add_child(form)
     var buttons := HBoxContainer.new()
     buttons.alignment = BoxContainer.ALIGNMENT_CENTER
     buttons.add_theme_constant_override("separation", 16)

@@ -30,7 +30,7 @@ func legal_moves(state: RefCounted) -> Array[Dictionary]:
     var s := state as BeloteState
     match s.phase:
         BeloteState.Phase.BID_ROUND_1, BeloteState.Phase.BID_ROUND_2:
-            return rules.bidding.legal_bids(s)
+            return rules.bidding.legal_bids(s, rules)
         BeloteState.Phase.PLAYING:
             var moves: Array[Dictionary] = []
             for card in legal_cards(s):

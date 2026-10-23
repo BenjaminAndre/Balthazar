@@ -32,6 +32,7 @@ func _ready() -> void:
     _column.add_child(_button("Belote contre 3 bots", func() -> void: Session.open_table(Callable())))
     _column.add_child(LevelPicker.new())
     _column.add_child(_button("Créer une table", _host))
+    _column.add_child(_button("Paramètres", func() -> void: get_tree().change_scene_to_file("res://ui/settings.tscn")))
     var join := HBoxContainer.new()
     join.add_theme_constant_override("separation", 12)
     _code = _field("Code", "", 200)

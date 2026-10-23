@@ -23,6 +23,8 @@ var state: BeloteState
 ## Which seats are played by people; the others are bots.
 var humans: Array[bool] = [true, false, false, false]
 var names: Array[String] = ["Vous", "Gauche", "Partenaire", "Droite"]
+## The table settings (TableSettings); set before start().
+var settings: Dictionary = TableSettings.complete({})
 
 ## Human seats still reading the hand summary: bots wait for all of them, a person for themself.
 var _reading: Dictionary = {}
@@ -31,6 +33,7 @@ var _after_trick := false
 
 
 func start(seed_value := -1) -> void:
+    game = Belote.new(TableSettings.belote_rules(settings))
     state = game.new_state(seed_value if seed_value >= 0 else randi())
     _reading.clear()
     resend()
@@ -133,12 +136,84 @@ func _broadcast(event: Dictionary) -> void:
 ## is false: tests then drive the bots with `play_bot_turn()`.
 func _schedule() -> void:
     _turn += 1
-    if not auto_bots or not is_inside_tree() or not bot_to_play():
+    if not auto_bots or not is_inside_tree():
+        return
+    if auto_finish_card() >= 0:
+        _auto_finish()
+        return
+    if not bot_to_play():
         return
     var turn := _turn
     await get_tree().create_timer(bot_delay + (trick_pause if _after_trick else 0.0)).timeout
     if turn == _turn:
         play_bot_turn()
+
+
+## « Fin automatique »: plays the person's card after a short pause; the next
+## lead follows the same way, since the claimed tricks are theirs.
+func _auto_finish() -> void:
+    var turn := _turn
+    await get_tree().create_timer(bot_delay + (trick_pause if _after_trick else 0.0)).timeout
+    var card := auto_finish_card()
+    if turn == _turn and card >= 0:
+        submit(state.to_act, {"kind": "play", "card": card})
+
+
+## With « Fin automatique », the card to play for the person who leads when every
+## card they hold surely wins, whatever the others hold (the host sees all hands);
+## -1 otherwise. Trumps go first, strongest first, to draw the others' trumps.
+func auto_finish_card() -> int:
+    if state == null or game.is_over(state) or state.phase != BeloteState.Phase.PLAYING:
+        return -1
+    if not TableSettings.value(settings, "general", "auto_finish"):
+        return -1
+    var seat := state.to_act
+    if not humans[seat] or _reading.has(seat) or not state.trick.is_empty():
+        return -1
+    var trump := state.trump
+    var others: Array[int] = []
+    for s in 4:
+        if s != seat:
+            others.append_array(state.hands[s])
+    var their_best_trump := -1
+    for card in others:
+        if Cards.suit_of(card) == trump:
+            their_best_trump = maxi(their_best_trump, BeloteCards.strength(card, trump))
+    var mine: Array[int] = state.hands[seat]
+    var my_trumps := 0
+    for card in mine:
+        if Cards.suit_of(card) == trump:
+            my_trumps += 1
+            if BeloteCards.strength(card, trump) < their_best_trump:
+                return -1
+    # Each trump we lead takes one trump from every other hand.
+    var most_trumps := 0
+    for s in 4:
+        if s != seat:
+            var count := 0
+            for card in state.hands[s]:
+                if Cards.suit_of(card) == trump:
+                    count += 1
+            most_trumps = maxi(most_trumps, count)
+    for card in mine:
+        if Cards.suit_of(card) == trump:
+            continue
+        # A side card wins only once nobody can cut any more, and if nobody follows higher.
+        if most_trumps > my_trumps:
+            return -1
+        for other in others:
+            if Cards.suit_of(other) == Cards.suit_of(card) \
+                    and BeloteCards.strength(other, trump) > BeloteCards.strength(card, trump):
+                return -1
+    var best := -1
+    for card in mine:
+        if best < 0 or _finish_order(card, trump) > _finish_order(best, trump):
+            best = card
+    return best
+
+
+func _finish_order(card: int, trump: int) -> int:
+    return (100 if Cards.suit_of(card) == trump else 0) + BeloteCards.strength(card, trump)
 
 
 func bot_to_play() -> bool:
@@ -155,6 +230,8 @@ func play_bot_turn() -> bool:
 
 ## What a seat says as it moves: its bid, then its announces and belote as it plays.
 func _say(seat: int, move: Dictionary) -> String:
+    if move.kind == "relance":
+        return "Relance (11 points ou moins)"
     if move.kind == "pass":
         return "Passe"
     if move.kind != "play":

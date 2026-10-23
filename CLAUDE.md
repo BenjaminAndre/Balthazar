@@ -43,3 +43,4 @@ godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png playin
 - Organise files by location, not by type. The game must work without the UI.
 - In-game text is in French. Never rely on non-Latin glyphs (♠♥ etc.) in on-screen text: they don't render with the default font in exported builds. Draw suits as images instead.
 - Don't edit `.godot/`. Commit the `*.uid` files that Godot generates next to new scripts.
+- Keep the `Session` autoload free of references to `class_name` scripts (game, table or bot classes): such a dependency made Godot leak at exit, and even crash with a computed property. Other code reaches the profile through `Session.get_raw()`/`set_raw()`.
