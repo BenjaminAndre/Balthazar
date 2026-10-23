@@ -106,13 +106,14 @@ Total : 152 points, plus 10 de der, soit 162.
 
 ## 5. Bots
 - Les bots ne voient que ce que voit un joueur : sa main, la table, les cartes jouées. Ils tiennent les places vides. Le niveau se choisit à l'accueil (partie solo) ou dans le salon (l'hôte).
-- Les noms affichés sont Facile, Moyen et Difficile. Dans le code et les outils, Moyen s'appelle encore `difficile` (`BeloteBotDifficile`) et Difficile s'appelle `zinzin` (`BeloteBotZinzin`).
+- Quatre niveaux, du plus faible au plus fort : Facile, Moyen, Difficile, Zinzin. Avance visée contre Facile, en points par donne : Moyen +4, Difficile +7,5, Zinzin le plus possible.
 - **Facile** : des règles simples ; il sait quelles cartes sont maîtresses.
-- **Moyen** (`difficile`) : il compte les cartes (`BeloteMemory`) : qui a joué quoi, qui n'a plus de quelle couleur, qui ne peut plus monter à l'atout.
+- **Moyen** : Difficile qui se trompe à la prise. Son évaluation de main est faussée d'environ 7 points (`MOYEN_BID_NOISE`), toujours de la même façon pour une même main : il prend parfois une main trop faible et passe parfois une bonne main. Il bat Facile de 3,7 ± 1,9 points par donne (5000 donnes).
+- **Difficile** : il compte les cartes (`BeloteMemory`) : qui a joué quoi, qui n'a plus de quelle couleur, qui ne peut plus monter à l'atout.
   - Il fait tomber les atouts quand son camp a pris, encaisse ses cartes maîtresses là où personne ne peut couper, et fait couper son partenaire.
   - Il ne charge un pli que s'il est sûr de le garder.
   - Il pratique l'**appel direct** : une petite carte jetée sur le pli du partenaire demande cette couleur, et il entame dans la couleur que son partenaire a appelée.
-- **Difficile** (`zinzin`) : des réglages lisibles, rangés selon les axes du jeu de la carte :
+- **Zinzin** : des réglages lisibles, rangés selon les axes du jeu de la carte :
   - **jouer dessus ou dessous**, ce qui se dédouble à la Belote : la force qu'on dépense et les points qu'on donne ;
   - **faire confiance au partenaire ou non** : charger son pli dès qu'il le garde avec une probabilité donnée ;
   - **préparer ou encaisser** : faire tomber les atouts, faire couper le partenaire, ou toucher ses cartes maîtresses tout de suite ;
@@ -120,13 +121,14 @@ Total : 152 points, plus 10 de der, soit 162.
   - à part, **l'audace à la prise** : la valeur de main exigée à chaque tour.
 - Les probabilités viennent de `BeloteMemory` (« garde-t-on ce pli ? »). Le génome n'en choisit que les seuils, c'est-à-dire la prise de risque.
 - Les réglages sont trouvés par un algorithme génétique, sans tête (`tools/train.gd`) :
-  - 50 génomes évoluent ; Moyen, fixe, sert d'ancre ;
+  - 50 génomes évoluent ; Difficile, fixe, sert d'ancre ;
   - à chaque génération, chacun joue des donnes dupliquées contre d'autres membres et un ancien champion ;
   - les meilleurs (points et donnes gagnées) survivent, les autres sont remplacés par des enfants croisés et mutés ;
-  - une ligne par génération résume le champion, mesuré contre Moyen sur des donnes inédites.
+  - une ligne par génération résume le champion, mesuré contre Difficile sur des donnes inédites.
   Le résultat est décrit dans `docs/zinzin.md`.
-  - État au 22/10/2026, sur 4000 donnes indépendantes : Difficile bat Moyen de 3,8 ± 1,4 points par donne, et Moyen bat Facile de 7,7 ± 2,9.
-  - Le 23/10/2026, Difficile a reçu l'état du contrat et la lecture des enchères (réglages `risque_contrat` et `lecture_encheres`).
+  - État au 22/10/2026, sur 4000 donnes indépendantes : Zinzin bat Difficile de 3,8 ± 1,4 points par donne, et Difficile bat Facile de 7,7 ± 2,9.
+  - Le 23/10/2026, Zinzin a reçu l'état du contrat et la lecture des enchères (réglages `risque_contrat` et `lecture_encheres`). L'évolution croit fortement les enchères (lecture 2,1) mais ignore le contrat (risque 0,02). Sur 4000 donnes : Zinzin bat Difficile de 4,2 ± 1,4 et Facile de 11,5 ± 2,1, sans progrès net sur le Zinzin précédent.
+  - En parties complètes en 101 (3000 parties) : Zinzin gagne 54 % contre Difficile, Difficile 58 % contre Facile, Moyen 53 % contre Facile.
   - Suite prévue : les points encore en jeu, les atouts par joueur, la place dans le pli.
 - `tools/arena.gd` mesure deux niveaux l'un contre l'autre en donnes dupliquées (chaque donne jouée deux fois, camps échangés).
 

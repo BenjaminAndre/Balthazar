@@ -22,7 +22,7 @@ func _ready() -> void:
         button.button_pressed = level == Session.bot_level
         button.add_theme_font_size_override("font_size", 20)
         button.add_theme_color_override("font_pressed_color", TableTheme.GREEN)
-        button.custom_minimum_size = Vector2(110, 48)
+        button.custom_minimum_size = Vector2(96, 48)
         button.toggled.connect(func(on: bool) -> void:
             if on:
                 Session.bot_level = level

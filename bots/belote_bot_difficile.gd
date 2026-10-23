@@ -9,6 +9,10 @@ extends BeloteBot
 ## Bidding: hand value needed to take on each round, with the turned card counted.
 var take_first := 50
 var take_second := 54
+## « Moyen » misjudges its hands at the bidding: its hand value is off by a
+## random amount of about this many points (0 for « Difficile »). The error
+## depends only on the hand, so the same hand is always judged the same way.
+var bid_noise := 0.0
 
 
 func choose(view: Dictionary) -> Dictionary:
@@ -32,13 +36,13 @@ func _bid_hard(view: Dictionary) -> Dictionary:
     hand.assign(view.hand)
     var best := {"kind": "pass"}
     var first: bool = view.phase == BeloteState.Phase.BID_ROUND_1
-    var best_value := take_first if first else take_second
+    var best_value := float(take_first if first else take_second)
     for move in view.legal:
         if move.kind != "take":
             continue
         var with_turned := hand.duplicate()
         with_turned.append(view.turned)
-        var value := strength_of(with_turned, move.suit)
+        var value := float(strength_of(with_turned, move.suit)) + _misjudgement(hand, move.suit, view)
         # Our partner is the dealer: the turned card is theirs to pick up too, a small bonus.
         if int(view.dealer) % 2 == int(view.seat) % 2:
             value += 3
@@ -46,6 +50,17 @@ func _bid_hard(view: Dictionary) -> Dictionary:
             best = move
             best_value = value
     return best
+
+
+## Moyen's error when valuing `hand` for `suit` (0 without bid_noise).
+func _misjudgement(hand: Array[int], suit: int, view: Dictionary) -> float:
+    if bid_noise <= 0.0:
+        return 0.0
+    var sorted := hand.duplicate()
+    sorted.sort()
+    var rng := RandomNumberGenerator.new()
+    rng.seed = hash([sorted, suit, view.turned, view.seat])
+    return rng.randfn(0.0, bid_noise)
 
 
 ## A hand's worth with `trump` as trumps: trump honours and length, side aces,

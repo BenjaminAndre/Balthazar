@@ -1,5 +1,5 @@
 extends SceneTree
-## Evolves « Zinzin » (shown as « Difficile ») headless (GDD §5), and writes bots/zinzin_genome.gd and
+## Evolves « Zinzin » headless (GDD §5), and writes bots/zinzin_genome.gd and
 ## docs/zinzin.md:
 ##     godot --headless --path . -s res://tools/train.gd -- [generations] [deals per opponent]
 ##
@@ -44,7 +44,7 @@ func _initialize() -> void:
     var deals := int(args[1]) if args.size() > 1 else 32
     _rng.seed = 2026
     _started = Time.get_ticks_msec()
-    _log("— entraînement : %d génomes, Moyen fixe (poids %d), %d générations, %d donnes par adversaire, %d processus" % [
+    _log("— entraînement : %d génomes, Difficile fixe (poids %d), %d générations, %d donnes par adversaire, %d processus" % [
             EVOLVING, ANCHOR_WEIGHT, generations, deals, WORKERS])
     var start := _complete(ZinzinGenome.GENES.duplicate())
     var population: Array = []
@@ -56,7 +56,7 @@ func _initialize() -> void:
         rivals.append(population[_rng.randi_range(0, EVOLVING - 1)])
     var champion: Dictionary = start
     var best_check := _check(start)
-    _log("départ : génome actuel contre Moyen %+.1f ± %.1f (sur %d donnes)" % [
+    _log("départ : génome actuel contre Difficile %+.1f ± %.1f (sur %d donnes)" % [
             best_check.mean, 2 * best_check.stderr, CHECK_DEALS])
     var best_mean: float = best_check.mean
     for generation in generations:
@@ -83,7 +83,7 @@ func _initialize() -> void:
         order = _ranked(population)
         var leader: Dictionary = population[order[0]]
         var record: Dictionary = _history[_key(leader)]
-        var line := "génération %3d · tête : %+5.1f contre Moyen sur %4d donnes cumulées · diversité %.2f · mutation %2.0f %% · %s" % [
+        var line := "génération %3d · tête : %+5.1f contre Difficile sur %4d donnes cumulées · diversité %.2f · mutation %2.0f %% · %s" % [
                 generation, record.anchor / record.weight, record.weight, _diversity(population),
                 100.0 * lerpf(0.35, 0.05, progress), _summary(leader)]
         if generation % CHECK_EVERY == CHECK_EVERY - 1:
@@ -278,11 +278,11 @@ func _report(genes: Dictionary) -> void:
             "Écrit par `tools/train.gd` le %s." % Time.get_datetime_string_from_system(false, true), "",
             "## Résultats", "", "Points d'avance par donne, sur des donnes dupliquées jamais vues :", ""]
     var against_difficile := _check(genes)
-    lines.append("- contre Moyen : %+.1f ± %.1f (%d donnes)" % [against_difficile.mean,
+    lines.append("- contre Difficile : %+.1f ± %.1f (%d donnes)" % [against_difficile.mean,
             2 * against_difficile.stderr, CHECK_DEALS])
     var against_facile := BotArena.match_up(TrainJobs.bot(genes), BeloteBot.new(), 1000, 95000000)
     lines.append("- contre Facile : %+.1f ± %.1f (1000 donnes)" % [against_facile.mean, 2 * against_facile.stderr])
-    lines.append_array(["", "## Ses réglages", "", "| Réglage | Valeur | Départ (façon Moyen) |", "|---|---|---|"])
+    lines.append_array(["", "## Ses réglages", "", "| Réglage | Valeur | Départ (façon Difficile) |", "|---|---|---|"])
     for name in BeloteBotZinzin.gene_names():
         var info: Array = BeloteBotZinzin.GENES_INFO[name]
         lines.append("| %s | %.2f | %.2f |" % [info[0], genes[name], info[1]])
