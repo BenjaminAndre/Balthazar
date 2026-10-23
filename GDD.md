@@ -105,10 +105,49 @@ Les paramètres sont rangés dans le profil (écran « Paramètres »). Une part
 - **Belote : annonces** (activées par défaut).
 - **Belote : relance à 12** (désactivée par défaut). Pendant les enchères, un joueur dont les 5 cartes valent 11 points ou moins (valeurs hors atout : As 11, 10 10, Roi 4, Dame 3, Valet 2) peut demander à redistribuer ; la donne passe au joueur suivant, comme quand tout le monde passe.
 
-## 4. Autres jeux (plus tard)
+## 4. Autres jeux
+
+### 4.1 Plus tard
 - **Coinche** : enchères 80 à 160, puis capot ; coinche et surcoinche. Elle réutilise le jeu de la carte de la Belote ; seuls l'enchère et le décompte changent.
-- **Tarot** : 78 cartes, 3 à 5 joueurs, avec son propre moteur.
 - Manille, Président… selon l'envie.
+
+### 4.2 Tarot (0.3.0)
+Le Tarot se joue à 3, 4 ou 5 (`games/tarot/`), proposés comme trois jeux à côté de la Belote. Seul le bot Facile existe pour l'instant.
+- **Cartes** : 78 cartes, soit 4 couleurs de 14 cartes (1 à 10, Valet, Cavalier, Dame, Roi), 21 atouts et l'Excuse.
+  - Les bouts (oudlers) sont le 1 (le Petit), le 21 et l'Excuse.
+  - Valeurs : bout ou Roi 4,5 ; Dame 3,5 ; Cavalier 2,5 ; Valet 1,5 ; les autres 0,5. Le jeu vaut 91 points.
+- **Donne** : 24 cartes chacun et 6 au chien à 3 joueurs ; 18 et 6 à 4 ; 15 et 3 à 5.
+  - « Petit sec » : un joueur dont le Petit est le seul atout, sans l'Excuse : on redistribue.
+  - Comme à la Belote, le jeu tourne dans le sens des aiguilles d'une montre *(à confirmer : le Tarot se joue d'habitude dans l'autre sens)*.
+  - Une partie dure deux tours de donne (2 × le nombre de joueurs) *(à confirmer)*.
+- **Enchères** : un seul tour, en commençant à gauche du donneur. Chacun passe ou monte : Petite, Garde, Garde sans, Garde contre. Si tout le monde passe, on redistribue.
+- **Appel au roi** (à 5) : le preneur appelle un roi (une dame s'il a les quatre rois). Celui qui l'a est son partenaire, inconnu jusqu'à ce que la carte soit jouée. S'il s'appelle lui-même, il joue seul.
+  - Au premier pli, on ne peut pas entamer la couleur appelée, sauf avec la carte appelée.
+- **Chien** :
+  - Petite et Garde : le chien est montré à tous, le preneur le prend et écarte autant de cartes. Pas de rois ni de bouts à l'écart ; des atouts seulement s'il ne reste rien d'autre *(simplification : la règle les autorise aussi, montrés)*.
+  - Garde sans : le chien va, sans être vu, dans les plis du preneur.
+  - Garde contre : il va à la défense.
+- **Jeu de la carte** :
+  - il faut fournir la couleur demandée ;
+  - sinon couper, et à l'atout il faut toujours monter si on peut ;
+  - sinon on joue ce qu'on veut.
+  - L'**Excuse** se joue à tout moment, ne gagne jamais, et reste à son camp, qui donne un demi-point au gagnant du pli. Jouée au dernier pli, elle va au gagnant de ce pli.
+  - Après une Excuse en tête, c'est la carte suivante qui donne la couleur.
+- **Décompte** :
+  - le preneur doit faire 56, 51, 41 ou 36 points selon qu'il a 0, 1, 2 ou 3 bouts ;
+  - la donne vaut (25 + l'écart) × le coefficient (Petite 1, Garde 2, Garde sans 4, Garde contre 6). L'écart est arrondi au point supérieur quand il tombe sur un demi-point *(à confirmer)* ;
+  - **petit au bout** : 10 × le coefficient pour le camp qui gagne le dernier pli avec le Petit dedans ;
+  - chaque défenseur paie la donne au camp du preneur. À 5, le preneur reçoit deux parts et son partenaire une ; seul, il en reçoit quatre.
+  - Pas encore : poignées, chelem.
+
+### 4.3 Salon et choix du jeu
+- **Solo** : l'accueil propose Belote, Tarot à 3, à 4 et à 5 contre des bots.
+- **Entre amis** : on crée d'abord une table et les amis la rejoignent avec le code. Ensuite seulement, l'hôte choisit :
+  - le jeu ;
+  - les bots (Belote) ;
+  - les paramètres.
+- **Places** : chacun reçoit une place au lancement. À la Belote, le premier arrivé après l'hôte est son partenaire ; au Tarot, on s'assoit dans l'ordre d'arrivée. Les places libres vont aux bots. On ne peut pas lancer un jeu qui a moins de places que de gens présents.
+- **Après la partie** : « Terminer » ramène tout le monde au salon, où l'hôte peut changer de jeu et relancer.
 
 ## 5. Bots
 - Les bots ne voient que ce que voit un joueur : sa main, la table, les cartes jouées. Ils tiennent les places vides. Le niveau se choisit à l'accueil (partie solo) ou dans le salon (l'hôte).
@@ -144,7 +183,7 @@ Les paramètres sont rangés dans le profil (écran « Paramètres »). Une part
 - Un mélange commit-reveal empêcherait l'hôte de truquer le paquet.
 - Firebase seul ne peut pas arbitrer sur l'offre gratuite : les Cloud Functions demandent l'offre Blaze.
 
-## 7. Feuille de route (0.1.x)
+## 7. Feuille de route
 1. ✅ Squelette : projet, CI (APK + Windows), ce document.
 2. ✅ Moteur de Belote : donne, prise, jeu de la carte, belote, décompte. Tests.
 3. ✅ Annonces.
@@ -153,5 +192,6 @@ Les paramètres sont rangés dans le profil (écran « Paramètres »). Une part
    - Prochaines idées : bots plus forts (entraînés en parties simulées), choisir de taire une annonce, dernier pli consultable, animations.
 6. ✅ (0.2.0) En ligne avec Tube : créer ou rejoindre par code, places (le premier ami en face de l'hôte), bots aux places libres. Un joueur qui décroche est remplacé par un bot et retrouve sa place en rejoignant avec le même code et le même pseudo.
    - Pas encore : l'hôte qui part arrête la table (pas de migration), choisir sa place dans le salon.
-7. Écran des options de règles, partagé par l'hôte.
-8. Plus tard : tables publiques (Firebase), Coinche, Tarot, classement, jeu hors ligne à proximité.
+7. ✅ (0.2.7) Paramètres dans le profil, repris et réglables dans le salon (GDD §3.8).
+8. ✅ (0.3.0) Tarot à 3, 4 et 5 (bot Facile), salon d'abord puis choix du jeu, retour au salon après la partie (§4.2, §4.3).
+9. Plus tard : bots de Tarot plus forts, poignées et chelem, fin automatique au Tarot, tables publiques (Firebase), Coinche, classement, jeu hors ligne à proximité.

@@ -1,9 +1,10 @@
 extends Control
-## An online table before the game (GDD §2): the code to share, the four seats,
-## and for the host the button that starts the game.
+## An online table's lobby (GDD §2): first the friends gather with the code; then
+## the host picks the game (Belote, Tarot à 3, 4 or 5), the bots and the
+## settings, and starts. Everyone comes back here after a game.
 
 var _panel: PanelContainer
-## Screenshots and tests show a lobby without Tube: {state, code, info, my_seat}.
+## Screenshots and tests show a lobby without Tube: {state, code, info, my_seat, host}.
 var preview: Dictionary = {}
 
 
@@ -34,7 +35,6 @@ func _refresh() -> void:
     var online_state: int = preview.get("state", Online.state)
     var code: String = preview.get("code", Online.code)
     var info: Dictionary = preview.get("info", Online.link.info)
-    var my_seat: int = preview.get("my_seat", Online.link.my_seat)
     var hosting := online_state == Online.State.HOSTING
     _panel = PanelContainer.new()
     var column := VBoxContainer.new()
@@ -56,78 +56,119 @@ func _refresh() -> void:
             copy.pressed.connect(func() -> void: DisplayServer.clipboard_set(code))
             row.add_child(copy)
             column.add_child(row)
-            column.add_child(_label("Donnez ce code à vos amis : ils le saisissent dans « Rejoindre ».",
-                    18, TableTheme.INK.lightened(0.3)))
         _:
             column.add_child(_label("Hors ligne", 30))
     if Online.error != "" and preview.is_empty():
         column.add_child(_label(Online.error, 20, TableTheme.RED))
-    var seats: Array = info.get("seats", [])
-    var body := HBoxContainer.new()
-    body.add_theme_constant_override("separation", 36)
-    var left := VBoxContainer.new()
-    left.add_theme_constant_override("separation", 12)
-    body.add_child(left)
-    column.add_child(body)
-    if not seats.is_empty():
-        left.add_child(HSeparator.new())
-        var grid := GridContainer.new()
-        grid.columns = 2
-        grid.add_theme_constant_override("h_separation", 32)
-        grid.add_theme_constant_override("v_separation", 8)
-        for seat in [0, 2, 1, 3]:
-            var entry: Dictionary = seats[seat]
-            grid.add_child(_label("Équipe %d" % (seat % 2 + 1), 20, TableTheme.INK.lightened(0.35)))
-            var text: String = entry.name if entry.human else "Bot"
-            if seat == 0:
-                text += " (hôte)"
-            if seat == my_seat:
-                text += " · vous"
-            if entry.human and not entry.here:
-                text += " · absent, un bot joue"
-            grid.add_child(_label(text, 24, TableTheme.INK if entry.human else TableTheme.INK.lightened(0.45)))
-        left.add_child(grid)
-        var hint := _label("Les partenaires sont dans la même équipe. Les places libres sont tenues par des bots.",
-                16, TableTheme.INK.lightened(0.35))
-        hint.autowrap_mode = TextServer.AUTOWRAP_WORD
-        hint.custom_minimum_size.x = 400
-        left.add_child(hint)
-    if hosting:
-        var picker := LevelPicker.new()
-        picker.level_changed.connect(func(level: String) -> void: Online.link.set_bot_level(level))
-        var row := PanelContainer.new()
-        var dark := StyleBoxFlat.new()
-        dark.bg_color = Color(0.08, 0.3, 0.17)
-        dark.set_corner_radius_all(10)
-        dark.set_content_margin_all(8)
-        row.add_theme_stylebox_override("panel", dark)
-        row.add_child(picker)
-        left.add_child(row)
-    elif info.has("bots"):
-        left.add_child(_label("Bots : %s" % BeloteBots.NAMES.get(info.bots, info.bots), 20))
-    if info.has("settings"):
-        # The host's settings: it may change them here; the guests see them.
-        var form := SettingsForm.new(info.settings, hosting)
+    if info.has("people"):
+        column.add_child(HSeparator.new())
+        var body := HBoxContainer.new()
+        body.add_theme_constant_override("separation", 36)
+        body.add_child(_people_and_game(info, hosting))
+        var game_id: String = info.get("game", "belote")
+        var form := SettingsForm.new(info.get("settings", {}), hosting,
+                ["general", "belote"] if game_id == "belote" else ["general"])
         form.setting_changed.connect(func(group: String, key: String, value: Variant) -> void:
             Online.link.set_setting(group, key, value))
         body.add_child(form)
+        column.add_child(body)
+    column.add_child(_buttons(info, hosting, online_state))
+    add_child(_panel)
+    _center.call_deferred()
+
+
+## Left side: who is here, the game, and the bots.
+func _people_and_game(info: Dictionary, hosting: bool) -> Control:
+    var left := VBoxContainer.new()
+    left.add_theme_constant_override("separation", 10)
+    var people: Array = info.people
+    var game_id: String = info.get("game", "belote")
+    var players: int = info.get("players", 4)
+    left.add_child(_label("À la table (%d)" % people.size(), 22, TableTheme.INK))
+    for i in people.size():
+        var person: Dictionary = people[i]
+        var text: String = person.name + (" (hôte)" if i == 0 else "")
+        if not person.here:
+            text += " · absent, un bot joue"
+        left.add_child(_label(text, 22, TableTheme.INK.lightened(0.0 if person.here else 0.4)))
+    left.add_child(_label("Jeu", 22, TableTheme.RED))
+    if hosting:
+        var games := GridContainer.new()
+        games.columns = 2
+        games.add_theme_constant_override("h_separation", 8)
+        games.add_theme_constant_override("v_separation", 8)
+        var group := ButtonGroup.new()
+        for game in GameCatalog.GAMES:
+            var button := Button.new()
+            button.text = game.name
+            button.toggle_mode = true
+            button.button_group = group
+            button.button_pressed = game.id == game_id
+            button.custom_minimum_size = Vector2(170, 50)
+            button.add_theme_font_size_override("font_size", 20)
+            button.add_theme_color_override("font_pressed_color", TableTheme.GREEN)
+            button.toggled.connect(func(on: bool) -> void:
+                if on:
+                    Online.link.set_game(game.id))
+            games.add_child(button)
+        left.add_child(games)
+    else:
+        left.add_child(_label(GameCatalog.info(game_id).name, 24, TableTheme.INK))
+    var free := players - people.size()
+    var hint := ""
+    if free < 0:
+        hint = "%d joueurs de trop pour ce jeu (%d places)." % [-free, players]
+    elif game_id == "belote":
+        hint = "Le premier arrivé après l'hôte est son partenaire. %s" % _bots_text(free)
+    else:
+        hint = _bots_text(free)
+    var hint_label := _label(hint, 16, TableTheme.RED if free < 0 else TableTheme.INK.lightened(0.35))
+    hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+    hint_label.custom_minimum_size.x = 380
+    left.add_child(hint_label)
+    if game_id == "belote":
+        if hosting:
+            var picker := LevelPicker.new()
+            picker.level_changed.connect(func(level: String) -> void: Online.link.set_bot_level(level))
+            var row := PanelContainer.new()
+            var dark := StyleBoxFlat.new()
+            dark.bg_color = Color(0.08, 0.3, 0.17)
+            dark.set_corner_radius_all(10)
+            dark.set_content_margin_all(8)
+            row.add_theme_stylebox_override("panel", dark)
+            row.add_child(picker)
+            left.add_child(row)
+        elif info.has("bots"):
+            left.add_child(_label("Bots : %s" % BeloteBots.NAMES.get(info.bots, info.bots), 20))
+    return left
+
+
+func _bots_text(free: int) -> String:
+    if free <= 0:
+        return "Toutes les places sont prises."
+    return "%d place%s libre%s : %s." % [free, "s" if free > 1 else "", "s" if free > 1 else "",
+            "un bot la tient" if free == 1 else "des bots les tiennent"]
+
+
+func _buttons(info: Dictionary, hosting: bool, online_state: int) -> Control:
     var buttons := HBoxContainer.new()
     buttons.alignment = BoxContainer.ALIGNMENT_CENTER
     buttons.add_theme_constant_override("separation", 16)
     if hosting:
         var start := Button.new()
         start.text = "Lancer la partie"
+        start.disabled = not info.get("can_start", true)
         start.pressed.connect(func() -> void: Online.link.start_game())
         buttons.add_child(start)
     elif online_state == Online.State.JOINED:
-        buttons.add_child(_label("L'hôte lance la partie…", 22))
+        var waiting := "Une partie est en cours : l'hôte revient bientôt." if info.get("started", false) \
+                else "L'hôte choisit le jeu et lance la partie…"
+        buttons.add_child(_label(waiting, 22))
     var quit := Button.new()
     quit.text = "Quitter"
     quit.pressed.connect(_leave)
     buttons.add_child(quit)
-    column.add_child(buttons)
-    add_child(_panel)
-    _center.call_deferred()
+    return buttons
 
 
 func _center() -> void:
@@ -144,7 +185,7 @@ func _label(text: String, font_size: int, color := TableTheme.INK) -> Label:
 
 
 func _on_started() -> void:
-    Session.open_table(func(table: Node) -> void: Online.attach_table(table))
+    Session.open_game(Online.link.game_id, func(table: Node) -> void: Online.attach_table(table))
 
 
 func _leave() -> void:

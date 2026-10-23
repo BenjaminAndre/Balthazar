@@ -68,6 +68,7 @@ func leave() -> void:
         link.host = null
     link.info = {}
     link.my_seat = -1
+    link.game_over = false
     state = State.OFFLINE
     changed.emit()
 
@@ -83,8 +84,15 @@ func attach_table(table: Node) -> void:
     table.continued.connect(link.continue_hand)
     table.left.connect(func() -> void:
         link.packet_received.disconnect(table.receive)
-        leave()
-        table.get_tree().change_scene_to_file("res://ui/main.tscn"))
+        link.screen_detached()
+        if link.game_over and is_online():
+            # The game is over: back to the lobby, still together, maybe for another game.
+            if link.is_host():
+                link.back_to_lobby()
+            table.get_tree().change_scene_to_file("res://ui/lobby.tscn")
+        else:
+            leave()
+            table.get_tree().change_scene_to_file("res://ui/main.tscn"))
     link.screen_attached()
 
 

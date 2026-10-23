@@ -622,7 +622,7 @@ func _show_summary(hand_end: Dictionary) -> void:
     buttons.add_theme_constant_override("separation", 16)
     buttons.alignment = BoxContainer.ALIGNMENT_CENTER
     if hand_end.game_over:
-        buttons.add_child(_button("Menu", func() -> void: left.emit()))
+        buttons.add_child(_button("Terminer", func() -> void: left.emit()))
     else:
         buttons.add_child(_button("Continuer", func() -> void:
                 _close_overlay()

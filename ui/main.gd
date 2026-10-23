@@ -20,19 +20,41 @@ func _ready() -> void:
     _column.alignment = BoxContainer.ALIGNMENT_CENTER
     add_child(_column)
     var version: String = ProjectSettings.get_setting("application/config/version")
-    var title := _label("Balthazar", 64, Color.WHITE)
+    var title := _label("Balthazar", 56, Color.WHITE)
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     _column.add_child(title)
     var subtitle := _label("v%s" % version, 18, Color(1, 1, 1, 0.6))
     subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     _column.add_child(subtitle)
+    var sides := HBoxContainer.new()
+    sides.add_theme_constant_override("separation", 48)
+    _column.add_child(sides)
+    # Left: against bots, one button per game.
+    var solo := VBoxContainer.new()
+    solo.add_theme_constant_override("separation", 12)
+    sides.add_child(solo)
+    solo.add_child(_heading("Contre des bots"))
+    var games := GridContainer.new()
+    games.columns = 2
+    games.add_theme_constant_override("h_separation", 12)
+    games.add_theme_constant_override("v_separation", 12)
+    for info in GameCatalog.GAMES:
+        var button := _button(info.name, func() -> void: Session.open_game(info.id))
+        button.custom_minimum_size = Vector2(220, 64)
+        games.add_child(button)
+    solo.add_child(games)
+    solo.add_child(LevelPicker.new())
+    var tarot_note := _label("Au Tarot, les bots sont tous « Facile » pour l'instant.", 16, Color(1, 1, 1, 0.7))
+    solo.add_child(tarot_note)
+    # Right: with friends.
+    var friends := VBoxContainer.new()
+    friends.add_theme_constant_override("separation", 12)
+    sides.add_child(friends)
+    friends.add_child(_heading("Entre amis"))
     _name = _field("Votre pseudo", Session.player_name, 360)
     _name.text_changed.connect(func(text: String) -> void: Session.player_name = text)
-    _column.add_child(_name)
-    _column.add_child(_button("Belote contre 3 bots", func() -> void: Session.open_table(Callable())))
-    _column.add_child(LevelPicker.new())
-    _column.add_child(_button("Créer une table", _host))
-    _column.add_child(_button("Paramètres", func() -> void: get_tree().change_scene_to_file("res://ui/settings.tscn")))
+    friends.add_child(_name)
+    friends.add_child(_button("Créer une table", _host))
     var join := HBoxContainer.new()
     join.add_theme_constant_override("separation", 12)
     _code = _field("Code", "", 200)
@@ -45,7 +67,8 @@ func _ready() -> void:
     var join_button := _button("Rejoindre", _join)
     join_button.custom_minimum_size.x = 148
     join.add_child(join_button)
-    _column.add_child(join)
+    friends.add_child(join)
+    friends.add_child(_button("Paramètres", func() -> void: get_tree().change_scene_to_file("res://ui/settings.tscn")))
     _message = _label(Online.error, 20, Color(1, 0.75, 0.6))
     _message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     _message.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -118,3 +141,9 @@ func _label(text: String, font_size: int, color: Color) -> Label:
 func _notification(what: int) -> void:
     if what == NOTIFICATION_WM_GO_BACK_REQUEST:
         get_tree().quit()
+
+
+func _heading(text: String) -> Label:
+    var label := _label(text, 26, Color(1, 0.84, 0.35))
+    label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    return label

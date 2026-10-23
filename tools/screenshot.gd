@@ -25,17 +25,49 @@ func _initialize() -> void:
     root.add_child(viewport)
     if setup == "home":
         viewport.add_child(load("res://ui/main.tscn").instantiate())
+    elif setup.begins_with("tarot"):
+        # tarot3 / tarot4 / tarot5: mid-deal, us to play; tarot_ecart: us discarding a petite;
+        # tarot_summary: the end of a deal.
+        var players := int(setup.right(1)) if setup.right(1).is_valid_int() else 4
+        var table: Control = load("res://ui/tarot_table.tscn").instantiate()
+        table.players = players
+        viewport.add_child(table)
+        await process_frame
+        await create_timer(0.5).timeout
+        var host: TarotHost = table.host
+        host.auto_bots = false
+        host.start(6)
+        var state := host.state
+        var bot := TarotBot.new()
+        var play := func(done: Callable) -> void:
+            while not done.call():
+                host.game.apply(state, bot.choose(host.game.view_for(state, state.to_act)))
+        match setup:
+            "tarot_ecart":
+                for i in 3:
+                    host.game.apply(state, {"kind": "bid", "contract": TarotState.Contract.NONE})
+                host.game.apply(state, {"kind": "bid", "contract": TarotState.Contract.PETITE})
+            "tarot_summary":
+                play.call(func() -> bool: return state.phase == TarotState.Phase.PLAYING \
+                        and state.hands[state.to_act].size() == 1 and state.trick.size() == players - 1)
+                host.resend()
+                await create_timer(0.6).timeout
+                host.submit(state.to_act, bot.choose(host.game.view_for(state, state.to_act)))
+                await create_timer(3.6).timeout
+            _:
+                play.call(func() -> bool: return state.phase == TarotState.Phase.PLAYING \
+                        and state.played.size() >= players + 2 and state.to_act == 0)
+        if setup != "tarot_summary":
+            host.resend()
     elif setup == "settings":
         viewport.add_child(load("res://ui/settings.tscn").instantiate())
     elif setup == "lobby":
         # A host's lobby with one friend seated, shown without Tube (no network here).
         var lobby: Control = load("res://ui/lobby.tscn").instantiate()
         lobby.preview = {"state": 2, "code": "K7QXPA", "my_seat": 0, "info": {"started": false,
-                "settings": TableSettings.complete({}), "bots": "difficile", "seats": [
-                {"name": "Benjamin", "human": true, "here": true},
-                {"name": "", "human": false, "here": false},
-                {"name": "Alice", "human": true, "here": true},
-                {"name": "", "human": false, "here": false}]}}
+                "settings": TableSettings.complete({}), "bots": "difficile", "game": "belote",
+                "players": 4, "can_start": true, "seats": [], "people": [
+                {"name": "Benjamin", "here": true}, {"name": "Alice", "here": true}]}}
         viewport.add_child(lobby)
     else:
         var table: Control = load("res://ui/table.tscn").instantiate()
