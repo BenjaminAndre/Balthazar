@@ -41,6 +41,8 @@ var announces: Array = [[], [], [], []]
 var announce_team := -1
 ## Announce points per team this hand (GDD §3.6).
 var announce_points: Array[int] = [0, 0]
+## This deal's bids, in order: {seat, kind ("pass" or "take"), suit, round}.
+var bids: Array[Dictionary] = []
 ## Cards played this hand, in order: public, and what bots count.
 var played: Array[int] = []
 

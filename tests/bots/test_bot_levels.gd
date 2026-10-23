@@ -82,3 +82,22 @@ func test_difficile_beats_facile() -> void:
     var result := BotArena.match_up(BeloteBotDifficile.new(), BeloteBot.new(), 1500, 3000)
     gut.p("difficile vs facile: %+.1f ± %.1f" % [result.mean, 2 * result.stderr])
     assert_gt(result.mean - 2 * result.stderr, 0.0)
+
+
+func test_memory_reads_turned_card_bids_and_contract() -> void:
+    var view := view_after([c(P, R.AS)], [c(P, R.DIX)])
+    view.taker = 2
+    view.turned = c(CO, R.SEPT)
+    view.bids = [{"seat": 1, "kind": "pass", "suit": -1, "round": 1},
+            {"seat": 2, "kind": "take", "suit": CO, "round": 1}]
+    var memory := BeloteMemory.from_view(view)
+    assert_true(memory.may_hold(2, c(CO, R.SEPT)), "the turned card is in the taker's hand")
+    assert_false(memory.may_hold(1, c(CO, R.SEPT)))
+    memory.bid_trust = 1.0
+    var valet := c(CO, R.VALET)
+    assert_gt(memory.holds_probability(2, valet), memory.holds_probability(3, valet),
+            "the taker more likely holds the valet")
+    assert_lt(memory.holds_probability(1, valet), memory.holds_probability(3, valet),
+            "who passed on the turned suit less likely holds it")
+    var urgency := memory.contract_urgency()
+    assert_between(urgency, 0.4, 0.6, "nothing scored yet: about half the points are needed")

@@ -49,6 +49,9 @@ func apply(state: RefCounted, move: Dictionary) -> void:
     var s := state as BeloteState
     assert(legal_moves(s).has(move), "illegal move %s" % move)
     s.moves.append(move)
+    if s.phase != BeloteState.Phase.PLAYING:
+        s.bids.append({"seat": s.to_act, "kind": move.kind, "suit": move.get("suit", -1),
+                "round": 1 if s.phase == BeloteState.Phase.BID_ROUND_1 else 2})
     if s.phase == BeloteState.Phase.PLAYING:
         _play(s, move.card)
         return
@@ -91,6 +94,8 @@ func view_for(state: RefCounted, seat: int) -> Dictionary:
         "reserve": s.reserve,
         "last_hand": s.last_hand.duplicate(true),
         "played": s.played.duplicate(),
+        "bids": s.bids.duplicate(true),
+        "announce_points": s.announce_points.duplicate(),
         "announces": _declared(s),
         "announce_team": s.announce_team,
         "belote_seat": _belote_said(s),
@@ -157,6 +162,7 @@ func _deal(s: BeloteState) -> void:
     s.announces = [[], [], [], []]
     s.announce_team = -1
     s.played.clear()
+    s.bids.clear()
     s.to_act = BeloteState.next_seat(s.dealer)
 
 

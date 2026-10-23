@@ -30,6 +30,14 @@ var card_points: Array[int] = [0, 0]
 var hand_sizes: Array[int] = [8, 8, 8, 8]
 ## The seat that said « belote » (it holds the other honour), or -1.
 var belote_seat := -1
+## The taker, the turned card (in the taker's hand), and who passed at the first round.
+var taker := -1
+var turned := -1
+var passed_first: Array[int] = []
+## Public announce points per team, once the first trick has settled them.
+var announce_points: Array[int] = [0, 0]
+## How much the bids are believed (see bid_weight); set by the bot.
+var bid_trust := 0.0
 
 
 static func from_view(view: Dictionary) -> BeloteMemory:
@@ -40,6 +48,13 @@ static func from_view(view: Dictionary) -> BeloteMemory:
     memory.trick.assign(view.trick)
     memory.leader = view.trick_leader
     memory.belote_seat = view.get("belote_seat", -1)
+    memory.taker = view.get("taker", -1)
+    memory.turned = view.get("turned", -1)
+    for bid in view.get("bids", []):
+        if bid.kind == "pass" and int(bid.round) == 1:
+            memory.passed_first.append(int(bid.seat))
+    if view.has("announce_points"):
+        memory.announce_points.assign(view.announce_points)
     if view.has("hand_sizes"):
         memory.hand_sizes.assign(view.hand_sizes)
     var played: Array[int] = []
@@ -83,6 +98,9 @@ func may_hold(s: int, card: int) -> bool:
     if belote_seat >= 0 and Cards.suit_of(card) == trump \
             and (Cards.rank_of(card) == Cards.Rank.ROI or Cards.rank_of(card) == Cards.Rank.DAME):
         return s == belote_seat
+    # The turned card went to the taker.
+    if card == turned and taker >= 0:
+        return s == taker
     var suit := Cards.suit_of(card)
     if is_void(s, suit):
         return false
@@ -130,15 +148,53 @@ func could_beat(s: int, cards: Array[int]) -> bool:
 
 
 ## Probability that seat `s` holds `card`: zero if the table rules it out,
-## otherwise its share of the room left among the seats that may hold it.
+## otherwise its share of the room left among the seats that may hold it,
+## weighted by what the bids say (bid_weight).
 func holds_probability(s: int, card: int) -> float:
     if not may_hold(s, card):
         return 0.0
     var room := 0.0
     for other in 4:
         if may_hold(other, card):
-            room += hand_sizes[other]
-    return hand_sizes[s] / room if room > 0.0 else 0.0
+            room += hand_sizes[other] * bid_weight(other, card)
+    return hand_sizes[s] * bid_weight(s, card) / room if room > 0.0 else 0.0
+
+
+## How much more (or less) likely the bids make it that seat `s` holds `card`,
+## scaled by bid_trust (0 = ignore the bids):
+## - the taker usually holds the valet or the 9 of trumps;
+## - someone who passed on the turned suit at the first round usually holds neither.
+func bid_weight(s: int, card: int) -> float:
+    if bid_trust <= 0.0 or Cards.suit_of(card) != trump:
+        return 1.0
+    var rank := Cards.rank_of(card)
+    if rank != Cards.Rank.VALET and rank != Cards.Rank.NEUF:
+        return 1.0
+    if s == taker:
+        return 1.0 + bid_trust
+    if trump == Cards.suit_of(turned) and passed_first.has(s):
+        return 1.0 / (1.0 + bid_trust)
+    return 1.0
+
+
+## Points our team still needs to decide the contract its way (taker: make it;
+## defence: make it fail), against the points left in play. 0 when it is already
+## decided either way, otherwise between 0 and 1: 1 means every point left is needed.
+func contract_urgency() -> float:
+    if taker < 0:
+        return 0.0
+    var points := [card_points[0] + announce_points[0], card_points[1] + announce_points[1]]
+    var total := 162 + announce_points[0] + announce_points[1]
+    if belote_seat >= 0:
+        points[belote_seat % 2] += 20
+        total += 20
+    var taker_needs := total / 2 + 1
+    var us := seat % 2
+    var needed: int = (taker_needs if taker % 2 == us else total - taker_needs + 1) - points[us]
+    var left := 162 - card_points[0] - card_points[1]
+    if needed <= 0 or needed > left:
+        return 0.0
+    return float(needed) / left
 
 
 ## Probability that the team winning `cards` (the trick with our card added)

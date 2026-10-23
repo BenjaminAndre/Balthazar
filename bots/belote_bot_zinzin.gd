@@ -25,6 +25,8 @@ const GENES_INFO := {
     "eviter_appel_adverse": ["éviter d'entamer la couleur qu'un adversaire a appelée", 1.0, 0.6],
     "marge_atouts": ["ne tirer les atouts qu'avec au moins cette avance en atouts", 0.0, 0.8],
     "audace_marque": ["prendre plus volontiers quand on est mené à la marque", 0.0, 4.0],
+    "risque_contrat": ["baisser ses exigences de sécurité quand le contrat se joue", 0.0, 0.15],
+    "lecture_encheres": ["croire les enchères (le preneur a valet ou 9, qui a passé ne les a pas)", 1.0, 0.6],
 }
 
 var genes: Dictionary = {}
@@ -59,6 +61,7 @@ func choose(view: Dictionary) -> Dictionary:
     if view.phase != BeloteState.Phase.PLAYING:
         return _take_or_pass(view)
     var memory := BeloteMemory.from_view(view)
+    memory.bid_trust = maxf(gene("lecture_encheres"), 0.0)
     var cards: Array[int] = []
     for move in legal:
         cards.append(move.card)
@@ -167,7 +170,7 @@ func _follow_card(cards: Array[int], memory: BeloteMemory) -> int:
         # Trust: does the partner keep the trick whatever we play?
         var probe := trick.duplicate()
         probe.append(_weakest(cards, trump))
-        if memory.keep_probability(probe) >= gene("confiance_partenaire"):
+        if memory.keep_probability(probe) >= _threshold("confiance_partenaire", memory):
             var loaded := _most_points(cards, memory, following)
             if loaded >= 0:
                 return loaded
@@ -183,7 +186,7 @@ func _follow_card(cards: Array[int], memory: BeloteMemory) -> int:
         after.append(card)
         if BeloteCards.winning_index(after, trump) == trick.size():
             winners.append(card)
-            if memory.keep_probability(after) >= gene("confiance_gain"):
+            if memory.keep_probability(after) >= _threshold("confiance_gain", memory):
                 keepers.append(card)
     if not keepers.is_empty():
         return _weakest(keepers, trump)
@@ -242,3 +245,9 @@ func _give_least(cards: Array[int], memory: BeloteMemory, following: bool, partn
             best_score = score
             best = card
     return best
+
+
+## A trust threshold, lowered when the contract is at stake: the more of the
+## points left our side needs, the more risk it takes (risque_contrat).
+func _threshold(name: String, memory: BeloteMemory) -> float:
+    return clampf(gene(name) - gene("risque_contrat") * memory.contract_urgency(), 0.0, 1.0)
