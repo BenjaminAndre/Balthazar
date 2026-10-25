@@ -83,17 +83,28 @@ func attach_table(table: Node) -> void:
     table.move_chosen.connect(link.submit)
     table.continued.connect(link.continue_hand)
     table.left.connect(func() -> void:
-        link.packet_received.disconnect(table.receive)
-        link.screen_detached()
         if link.game_over and is_online():
             # The game is over: back to the lobby, still together, maybe for another game.
+            _detach_table(table)
             if link.is_host():
                 link.back_to_lobby()
             table.get_tree().change_scene_to_file("res://ui/lobby.tscn")
         else:
-            leave()
-            table.get_tree().change_scene_to_file("res://ui/main.tscn"))
+            _to_menu(table))
+    table.menu_requested.connect(_to_menu.bind(table))
     link.screen_attached()
+
+
+func _detach_table(table: Node) -> void:
+    link.packet_received.disconnect(table.receive)
+    link.screen_detached()
+
+
+## Leaves the online table, whatever its state, for the main menu.
+func _to_menu(table: Node) -> void:
+    _detach_table(table)
+    leave()
+    table.get_tree().change_scene_to_file("res://ui/main.tscn")
 
 
 ## The Tube context the app opens tables with. Tube refuses to open any table unless

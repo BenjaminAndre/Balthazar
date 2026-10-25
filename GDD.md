@@ -148,6 +148,7 @@ Le Tarot se joue à 3, 4 ou 5 (`games/tarot/`), proposés comme trois jeux à c�
   - les paramètres.
 - **Places** : chacun reçoit une place au lancement. À la Belote, le premier arrivé après l'hôte est son partenaire ; au Tarot, on s'assoit dans l'ordre d'arrivée. Les places libres vont aux bots. On ne peut pas lancer un jeu qui a moins de places que de gens présents.
 - **Après la partie** : « Terminer » ramène tout le monde au salon, où l'hôte peut changer de jeu et relancer.
+- **Quitter** : à toute table (solo ou en ligne, en cours de partie comme après), le bouton « Quitter » reste affiché en bas à gauche. Après confirmation, on revient à l'accueil. Seul « Terminer » ramène au salon.
 
 ## 5. Bots
 - Les bots ne voient que ce que voit un joueur : sa main, la table, les cartes jouées. Ils tiennent les places vides. Le niveau se choisit à l'accueil (partie solo) ou dans le salon (l'hôte).

@@ -6,10 +6,14 @@ extends Control
 
 signal move_chosen(move: Dictionary)
 signal continued
+## The player is done with the table: the back button, or Terminer after the game.
 signal left
+## The player confirmed quitting the game for the main menu, whatever its state.
+signal menu_requested
 
 const TRICK_DELAY := 1.3
 const LAST_TRICK_DELAY := 2.4
+const QUIT_WIDTH := 150.0
 const BUBBLE := Color(1, 0.98, 0.88)
 const GOLD := Color(1, 0.84, 0.35)
 
@@ -28,6 +32,7 @@ var _shown_chien: Array = []
 var _overlay: Control
 var _layer: Control
 var _felt: ShaderMaterial
+var _quit: Button
 
 var _seen_deal := -1
 var _seen_hand: Dictionary = {}
@@ -52,6 +57,7 @@ func _ready() -> void:
     _layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
     _layer.set_anchors_preset(Control.PRESET_FULL_RECT)
     add_child(_layer)
+    _add_quit_button()
     resized.connect(_refresh)
     var setup := Session.take_table_setup()
     if setup.is_valid():
@@ -60,13 +66,37 @@ func _ready() -> void:
         play_solo()
 
 
+## The Quitter button: always there, bottom left, whatever the state of the game.
+func _add_quit_button() -> void:
+    _quit = Button.new()
+    _quit.text = "Quitter"
+    _quit.custom_minimum_size = Vector2(QUIT_WIDTH, 52)
+    _quit.add_theme_font_size_override("font_size", 20)
+    _quit.pressed.connect(_ask_quit)
+    # Grows upwards from the bottom edge if the theme wants more height than asked.
+    _quit.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+    _quit.grow_vertical = Control.GROW_DIRECTION_BEGIN
+    _quit.offset_left = 16
+    _quit.offset_bottom = -16
+    add_child(_quit)
+
+
+## Leaving the game for the menu is asked first (see QuitPrompt).
+func _ask_quit() -> void:
+    var prompt := QuitPrompt.new()
+    prompt.confirmed.connect(func() -> void: menu_requested.emit())
+    add_child(prompt)
+
+
 ## A game against bots, with us in seat 0.
 func play_solo(seed_value := -1) -> TarotHost:
     host = TarotHost.new(players)
     add_child(host)
     host.settings = TableSettings.load_profile()
     attach(host, 0)
-    left.connect(func() -> void: get_tree().change_scene_to_file("res://ui/main.tscn"))
+    var to_menu := func() -> void: get_tree().change_scene_to_file("res://ui/main.tscn")
+    left.connect(to_menu)
+    menu_requested.connect(to_menu)
     host.start(seed_value)
     return host
 

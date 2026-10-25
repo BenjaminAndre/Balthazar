@@ -8,11 +8,14 @@ extends Control
 signal move_chosen(move: Dictionary)
 ## The player closed the hand summary.
 signal continued
-## The player left the table (back button or the summary's Menu).
+## The player is done with the table: the back button, or Terminer after the game.
 signal left
+## The player confirmed quitting the game for the main menu, whatever its state.
+signal menu_requested
 
 const TRICK_DELAY := 1.3
 const LAST_TRICK_DELAY := 2.4
+const QUIT_WIDTH := 150.0
 const FELT := Color(0.08, 0.33, 0.19)
 const BUBBLE := Color(1, 0.98, 0.88)
 const GOLD := Color(1, 0.84, 0.35)
@@ -36,6 +39,7 @@ var _show_last_trick := false
 var _overlay: Control
 var _layer: Control
 var _felt: ShaderMaterial
+var _quit: Button
 
 # Animation bookkeeping: what the last refresh showed, so only new things move.
 var _seen_deal := -1
@@ -64,12 +68,35 @@ func _ready() -> void:
     _layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
     _layer.set_anchors_preset(Control.PRESET_FULL_RECT)
     add_child(_layer)
+    _add_quit_button()
     resized.connect(_refresh)
     var setup := Session.take_table_setup()
     if setup.is_valid():
         setup.call(self)
     else:
         play_solo()
+
+
+## The Quitter button: always there, bottom left, whatever the state of the game.
+func _add_quit_button() -> void:
+    _quit = Button.new()
+    _quit.text = "Quitter"
+    _quit.custom_minimum_size = Vector2(QUIT_WIDTH, 52)
+    _quit.add_theme_font_size_override("font_size", 20)
+    _quit.pressed.connect(_ask_quit)
+    # Grows upwards from the bottom edge if the theme wants more height than asked.
+    _quit.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+    _quit.grow_vertical = Control.GROW_DIRECTION_BEGIN
+    _quit.offset_left = 16
+    _quit.offset_bottom = -16
+    add_child(_quit)
+
+
+## Leaving the game for the menu is asked first (see QuitPrompt).
+func _ask_quit() -> void:
+    var prompt := QuitPrompt.new()
+    prompt.confirmed.connect(func() -> void: menu_requested.emit())
+    add_child(prompt)
 
 
 ## A game against 3 bots: a host of our own, with us in seat 0.
@@ -79,7 +106,9 @@ func play_solo(seed_value := -1) -> TableHost:
     host.set_bot_level(Session.bot_level)
     host.settings = TableSettings.load_profile()
     attach(host, 0)
-    left.connect(func() -> void: get_tree().change_scene_to_file("res://ui/main.tscn"))
+    var to_menu := func() -> void: get_tree().change_scene_to_file("res://ui/main.tscn")
+    left.connect(to_menu)
+    menu_requested.connect(to_menu)
     host.start(seed_value)
     return host
 
@@ -499,7 +528,8 @@ func _draw_info() -> void:
             _show_last_trick = not _show_last_trick
             _refresh())
         _layer.add_child(last)
-        last.position = Vector2(20, size.y - last.get_combined_minimum_size().y - 16)
+        # Beside the Quitter button, bottom left.
+        last.position = Vector2(16 + QUIT_WIDTH + 12, size.y - last.get_combined_minimum_size().y - 16)
     if _view.has("bot_level") and _view.humans.has(false):
         var level := _label("Bots : %s" % BeloteBots.NAMES.get(_view.bot_level, ""), 18, Color(1, 1, 1, 0.7))
         _layer.add_child(level)
