@@ -11,7 +11,7 @@ enum State { OFFLINE, CREATING, HOSTING, JOINING, JOINED }
 
 ## Readable when spoken or typed: no O/0, I/1.
 const CODE_CHARACTERS := "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-const APP_ID := "Balthazar-Bel0te"
+const APP_ID := "Balthazar-Belot"
 const TRACKERS: Array[String] = ["wss://tracker.androodev.com", "wss://tracker.openwebtorrent.com",
         "wss://tracker.files.fm:7073/announce", "wss://tracker.btorrent.xyz/"]
 const STUN_SERVERS: Array[String] = ["stun:stun.l.google.com:19302", "stun:stun.cloudflare.com:3478"]
@@ -96,16 +96,22 @@ func attach_table(table: Node) -> void:
     link.screen_attached()
 
 
-func _ensure_tube() -> void:
-    if _tube:
-        return
+## The Tube context the app opens tables with. Tube refuses to open any table unless
+## this context is valid, and that needs an app id of exactly 15 ASCII characters.
+static func make_context() -> TubeContext:
     var context := TubeContext.new()
     context.app_id = APP_ID
     context.session_id_characters_set = CODE_CHARACTERS
     context.trackers_urls = TRACKERS
     context.stun_servers_urls = STUN_SERVERS
+    return context
+
+
+func _ensure_tube() -> void:
+    if _tube:
+        return
     _tube = TubeClient.new()
-    _tube.context = context
+    _tube.context = make_context()
     _tube.multiplayer_root_node = self
     add_child(_tube)
     _tube.session_created.connect(_on_session_created)
