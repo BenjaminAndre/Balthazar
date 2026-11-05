@@ -18,6 +18,7 @@ godot --headless --path . --import                   # after adding scripts or a
 godot --headless --path . -s addons/gut/gut_cmdln.gd # all tests (GUT, config in .gutconfig.json)
 godot --headless --path . --quit-after 300           # run briefly and check the log for errors
 godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png playing   # home, bidding, playing, summary
+godot --path . --resolution 64x64 -s res://tools/bench.gd -- tarot5   # draw calls per frame and frame time, off-screen
 ```
 
 **Never pop a window on the user's monitor.** `tools/screenshot.gd` renders a 1600×720 screen off-screen into a SubViewport (setups listed in the script).
@@ -35,7 +36,8 @@ godot --path . --resolution 64x64 -s res://tools/screenshot.gd -- out.png playin
 - `table/`: `TableHost` (Belote) and `TarotHost` (3–5 players, same public API) run a table: it owns the state, plays the bots, and sends each human seat packets `{event, view}` with only what that seat may see. The table screen (`ui/table.gd`) only plays those packets, so the same screen works solo, as host and as guest.
 - `network/`: `Online` (autoload) holds the TubeClient (WebRTC P2P, sessions shared by code) and a `TableLink`, whose RPCs seat the guests and carry moves and per-seat packets. The host's TableHost lives under the link, so it survives scene changes. **Never run Tube on this PC** (it opens sockets): `tests/network/` drives `TableLink` over in-memory `LoopbackPeer`s instead, and `tools/screenshot.gd lobby` shows the lobby without Tube. The host owns the state and sends each player only what that seat may see. **Tests must never open sockets or ports**: this machine has no firewall rights. Use an in-memory transport.
 - `ui/`: the landscape phone table. It only displays the state and turns taps into moves.
-  - The look is procedural, with no image files: `felt.gdshader` (mat), `card.gdshader` (light from the top on every card), `CardView` (faces, backs, shadows). The table rebuilds its nodes on each refresh and animates only what is new since the last one (dealt cards, the card just played, the trick swept to its winner).
+  - The look is procedural, with no image files, but **drawn once, then shown as textures** (performance on phones): `CardPainter` draws a card in code (with `card.gdshader`), `CardAtlas` bakes a whole deck with it into one texture when a table opens, and `CardView` shows a card as one quad cut from that texture, so every card shares it and the table draws in a few batches. `FeltBackdrop` bakes `felt.gdshader` once per screen size. Never draw per-frame shapes or give a card its own material again: 5 opponents' hands cost 6,800 draw calls per frame that way. The project runs in low-processor mode (redraw only on change); a bake turns it off for its two frames.
+  - The table rebuilds its nodes on each refresh and animates only what is new since the last one (dealt cards, the card just played, the trick swept to its winner).
 
 ## Conventions
 

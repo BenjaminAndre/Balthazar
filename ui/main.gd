@@ -9,12 +9,7 @@ var _column: VBoxContainer
 
 func _ready() -> void:
     theme = TableTheme.make()
-    var felt := ColorRect.new()
-    var mat := ShaderMaterial.new()
-    mat.shader = preload("res://ui/felt.gdshader")
-    felt.material = mat
-    felt.set_anchors_preset(Control.PRESET_FULL_RECT)
-    add_child(felt)
+    add_child(FeltBackdrop.new())
     _column = VBoxContainer.new()
     _column.add_theme_constant_override("separation", 14)
     _column.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -75,7 +70,6 @@ func _ready() -> void:
     _message.custom_minimum_size.x = 360
     _column.add_child(_message)
     resized.connect(func() -> void:
-        mat.set_shader_parameter("size", size)
         _layout())
     _layout.call_deferred()
 

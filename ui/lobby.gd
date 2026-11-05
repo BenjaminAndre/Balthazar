@@ -10,14 +10,8 @@ var preview: Dictionary = {}
 
 func _ready() -> void:
     theme = TableTheme.make()
-    var felt := ColorRect.new()
-    var mat := ShaderMaterial.new()
-    mat.shader = preload("res://ui/felt.gdshader")
-    felt.material = mat
-    felt.set_anchors_preset(Control.PRESET_FULL_RECT)
-    add_child(felt)
+    add_child(FeltBackdrop.new())
     resized.connect(func() -> void:
-        mat.set_shader_parameter("size", size)
         _center())
     Online.changed.connect(_refresh)
     Online.link.started.connect(_on_started)

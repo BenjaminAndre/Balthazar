@@ -8,12 +8,7 @@ var _panel: PanelContainer
 
 func _ready() -> void:
     theme = TableTheme.make()
-    var felt := ColorRect.new()
-    var mat := ShaderMaterial.new()
-    mat.shader = preload("res://ui/felt.gdshader")
-    felt.material = mat
-    felt.set_anchors_preset(Control.PRESET_FULL_RECT)
-    add_child(felt)
+    add_child(FeltBackdrop.new())
     _panel = PanelContainer.new()
     var column := VBoxContainer.new()
     column.add_theme_constant_override("separation", 14)
@@ -35,7 +30,6 @@ func _ready() -> void:
     column.add_child(back)
     add_child(_panel)
     resized.connect(func() -> void:
-        mat.set_shader_parameter("size", size)
         _center())
     _center.call_deferred()
 

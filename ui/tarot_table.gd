@@ -31,7 +31,6 @@ var _hide_hands := false
 var _shown_chien: Array = []
 var _overlay: Control
 var _layer: Control
-var _felt: ShaderMaterial
 var _quit: Button
 
 var _seen_deal := -1
@@ -46,19 +45,14 @@ var _time := 0.0
 
 func _ready() -> void:
     theme = TableTheme.make()
-    var felt := ColorRect.new()
-    _felt = ShaderMaterial.new()
-    _felt.shader = preload("res://ui/felt.gdshader")
-    felt.material = _felt
-    felt.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    felt.set_anchors_preset(Control.PRESET_FULL_RECT)
-    add_child(felt)
+    add_child(FeltBackdrop.new())
     _layer = Control.new()
     _layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
     _layer.set_anchors_preset(Control.PRESET_FULL_RECT)
     add_child(_layer)
     _add_quit_button()
     resized.connect(_refresh)
+    await CardAtlas.ensure("tarot", self)
     var setup := Session.take_table_setup()
     if setup.is_valid():
         setup.call(self)
@@ -271,8 +265,6 @@ func _refresh() -> void:
     for child in _layer.get_children():
         _layer.remove_child(child)
         child.queue_free()
-    if _felt:
-        _felt.set_shader_parameter("size", size)
     var card_size := Vector2(size.y * 0.155, size.y * 0.22)
     var small := card_size * 0.45
     _floating.clear()
@@ -353,7 +345,8 @@ func _draw_opponents(small: Vector2) -> void:
     for seat in players:
         if seat == _me:
             continue
-        var n: int = _view.hand_sizes[seat]
+        # A fan of 8 at most: enough to read as a hand, cheaper to draw.
+        var n: int = mini(int(_view.hand_sizes[seat]), 8)
         var origin := _seat_origin(seat)
         var d := _direction(seat)
         var along := Vector2(-d.y, d.x)

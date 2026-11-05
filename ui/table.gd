@@ -16,7 +16,6 @@ signal menu_requested
 const TRICK_DELAY := 1.3
 const LAST_TRICK_DELAY := 2.4
 const QUIT_WIDTH := 150.0
-const FELT := Color(0.08, 0.33, 0.19)
 const BUBBLE := Color(1, 0.98, 0.88)
 const GOLD := Color(1, 0.84, 0.35)
 
@@ -38,7 +37,6 @@ var _hide_hands := false
 var _show_last_trick := false
 var _overlay: Control
 var _layer: Control
-var _felt: ShaderMaterial
 var _quit: Button
 
 # Animation bookkeeping: what the last refresh showed, so only new things move.
@@ -56,20 +54,15 @@ var _time := 0.0
 
 func _ready() -> void:
     theme = TableTheme.make()
-    var felt := ColorRect.new()
-    felt.color = FELT
-    _felt = ShaderMaterial.new()
-    _felt.shader = preload("res://ui/felt.gdshader")
-    felt.material = _felt
-    felt.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    felt.set_anchors_preset(Control.PRESET_FULL_RECT)
-    add_child(felt)
+    add_child(FeltBackdrop.new())
     _layer = Control.new()
     _layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
     _layer.set_anchors_preset(Control.PRESET_FULL_RECT)
     add_child(_layer)
     _add_quit_button()
     resized.connect(_refresh)
+    # Every card is baked once into a texture before the table shows anything.
+    await CardAtlas.ensure("belote", self)
     var setup := Session.take_table_setup()
     if setup.is_valid():
         setup.call(self)
@@ -285,8 +278,6 @@ func _refresh() -> void:
     for child in _layer.get_children():
         _layer.remove_child(child)
         child.queue_free()
-    if _felt:
-        _felt.set_shader_parameter("size", size)
     var card_size := Vector2(size.y * 0.175, size.y * 0.25)
     var small := card_size * 0.5
     _floating.clear()
