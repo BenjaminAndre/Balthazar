@@ -12,6 +12,7 @@ Les règles se règlent : chaque table choisit ses variantes.
 
 - Godot 4.7, GDScript, export Android (arm64) construit par la CI. Écran en **paysage**.
 - **Jeu en ligne** : Tube (WebRTC pair-à-pair, trackers WebTorrent publics). L'hôte crée une table et partage un code ; les amis le saisissent. Pas de serveur ni de compte.
+- **Relais** : quand la connexion directe échoue (souvent entre deux téléphones sur données mobiles, derrière le NAT de l'opérateur), un relais TURN gratuit (api.androodev.com, cité par le README de Tube) prend le relais. Ce n'est pas un serveur à nous, mais un service tiers sans garantie : il voit les adresses IP des joueurs, pas le contenu, chiffré. Sans relais joignable, la table s'ouvre quand même, et ne joint que les joueurs sur le même Wi-Fi.
 - L'hôte fait autorité : il tient le paquet et n'envoie à chaque joueur que sa main et ce qui est visible sur la table.
 - Les places vides sont tenues par des bots.
 - **Plus tard** :

@@ -15,6 +15,9 @@ const APP_ID := "Balthazar-Belot"
 const TRACKERS: Array[String] = ["wss://tracker.androodev.com", "wss://tracker.openwebtorrent.com",
         "wss://tracker.files.fm:7073/announce", "wss://tracker.btorrent.xyz/"]
 const STUN_SERVERS: Array[String] = ["stun:stun.l.google.com:19302", "stun:stun.cloudflare.com:3478"]
+## A free TURN relay (named in Tube's README), for when no direct connection can be made:
+## two phones on mobile data, behind carriers' NAT, often can't reach each other otherwise.
+const RELAY_URL := "https://api.androodev.com/turn"
 
 var state := State.OFFLINE
 ## The table's code, to share with friends.
@@ -25,12 +28,19 @@ var link: TableLink
 
 var _tube: TubeClient
 var _name := ""
+var _relay: HTTPRequest
+## What to do once the relay has answered (create or join), while it is asked.
+var _start_when_ready := Callable()
 
 
 func _ready() -> void:
     link = TableLink.new()
     link.name = "Link"
     add_child(link)
+    _relay = HTTPRequest.new()
+    _relay.timeout = 5.0
+    _relay.request_completed.connect(_on_relay_answer)
+    add_child(_relay)
     link.failed.connect(func(reason: String) -> void:
         leave()
         error = reason
@@ -44,7 +54,7 @@ func host_table(player_name: String) -> void:
     _name = player_name
     error = ""
     state = State.CREATING
-    _tube.create_session()
+    _with_relay(func() -> void: _tube.create_session())
     changed.emit()
 
 
@@ -55,11 +65,13 @@ func join_table(table_code: String, player_name: String) -> void:
     error = ""
     code = table_code.strip_edges().to_upper()
     state = State.JOINING
-    _tube.join_session(code)
+    _with_relay(func() -> void: _tube.join_session(code))
     changed.emit()
 
 
 func leave() -> void:
+    _relay.cancel_request()
+    _start_when_ready = Callable()
     if _tube and _tube.state != TubeClient.State.IDLE:
         _tube.leave_session()
     link.screen_detached()
@@ -116,6 +128,52 @@ static func make_context() -> TubeContext:
     context.trackers_urls = TRACKERS
     context.stun_servers_urls = STUN_SERVERS
     return context
+
+
+## Runs `start` (create or join) once the relay's TURN entries are in the Tube context.
+## Without them (no network, or the relay is slow or down), it runs at once: the STUN
+## servers alone still connect players on the same Wi-Fi.
+func _with_relay(start: Callable) -> void:
+    _tube.context.turn_servers = []
+    _start_when_ready = start
+    if _relay.request(RELAY_URL) != OK:
+        _start_now()
+
+
+func _on_relay_answer(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+    if result == HTTPRequest.RESULT_SUCCESS and code == 200:
+        _tube.context.turn_servers = turn_servers_from(body)
+    _start_now()
+
+
+func _start_now() -> void:
+    var start := _start_when_ready
+    _start_when_ready = Callable()
+    if start.is_valid():
+        start.call()
+
+
+## The TURN entries of a relay's answer ({"iceServers": [...]}), as TubeContext wants
+## them. The STUN entries are left out: the context already has its own.
+static func turn_servers_from(body: PackedByteArray) -> Array[Dictionary]:
+    var servers: Array[Dictionary] = []
+    var json := JSON.new()
+    if json.parse(body.get_string_from_utf8()) != OK:
+        return servers
+    var answer = json.data
+    if typeof(answer) != TYPE_DICTIONARY or not (answer.get("iceServers") is Array):
+        return servers
+    for server in answer["iceServers"]:
+        if typeof(server) == TYPE_DICTIONARY and _has_turn_url(server.get("urls")):
+            servers.append(server)
+    return servers
+
+
+static func _has_turn_url(urls: Variant) -> bool:
+    for url in (urls if urls is Array else [urls]):
+        if str(url).begins_with("turn"):
+            return true
+    return false
 
 
 func _ensure_tube() -> void:
