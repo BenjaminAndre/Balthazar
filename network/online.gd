@@ -169,8 +169,10 @@ func _on_error(error_code: int, message: String) -> void:
         leave()
         error = "Impossible de créer la table (%s)" % message
     elif error_code == TubeClient.SessionError.JOIN_SESSION_FAILED:
+        # Without a relay, a direct connection can fail even with the right code (typically
+        # between two mobile data connections), and Tube reports it the same way.
         leave()
-        error = "Table introuvable : vérifiez le code"
+        error = "Table introuvable, ou le réseau bloque la connexion directe : vérifiez le code, puis essayez le Wi-Fi."
     else:
         error = message
     changed.emit()
